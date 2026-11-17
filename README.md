@@ -26,7 +26,7 @@ Open data (NASA/IPCC AR6, Copernicus DEM, NOAA CRW, ERA5, OpenStreetMap)
 PostgreSQL (Supabase) / SQLite   ← assets, risk results, flood zones, safe sites
         │  backend/app/risk       (risk engine: flood, heat, salt, criticality)
         ▼
-FastAPI REST API  (backend/app/api.py, docs at /docs)
+FastAPI REST API  (backend/app/api.py, docs at /docs) — hosted on Vercel, auto-deploys on push
         ▼
 React + Leaflet dashboard  (frontend/)
 ```

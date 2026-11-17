@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import json
+import os
+import re
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -84,10 +86,22 @@ def climate_for(db: Session, region: str) -> E.Climate:
 
 
 # ---------------------------------------------------------------------------
+def _clean(msg: str) -> str:
+    """Remove any password from an error message before showing it."""
+    return re.sub(r"://([^:/@\s]+):[^@\s]+@", r"://\1:****@", msg)[:500]
+
+
 @router.get("/health", tags=["meta"])
-def health(db: Session = Depends(get_db)):
-    built = {r: (b.data if (b := region_blob(db, r, "build")) else None) for r in REGIONS}
-    return {"status": "ok", "version": APP_VERSION, "regions_built": built}
+def health():
+    from .config import settings
+    db_kind = settings.database_url.split(":", 1)[0]
+    try:
+        with SessionLocal() as db:
+            built = {r: (b.data if (b := region_blob(db, r, "build")) else None) for r in REGIONS}
+        return {"status": "ok", "version": APP_VERSION, "database": db_kind, "regions_built": built}
+    except Exception as e:
+        return {"status": "error", "version": APP_VERSION, "database": db_kind,
+                "database_url_set": bool(os.environ.get("DATABASE_URL")), "error": _clean(str(e))}
 
 
 @router.get("/meta", tags=["meta"])

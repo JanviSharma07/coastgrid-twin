@@ -4,6 +4,7 @@ Run locally (from the backend folder):
     uvicorn app.main:app --reload
 Then open http://127.0.0.1:8000/docs
 """
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -16,7 +17,10 @@ from .db import init_db
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    init_db()
+    try:
+        init_db()
+    except Exception as e:  # keep the app up so /api/health can report the problem
+        logging.getLogger("api").error("Database not reachable at startup: %s", e)
     yield
 
 

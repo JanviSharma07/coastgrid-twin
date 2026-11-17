@@ -1,0 +1,34 @@
+{
+ "_mock": "SYNTHETIC TEST DATA - not real results. Same shape as the live API.",
+ "asset_id": "osm-node-1027",
+ "name": "Test Substation 27",
+ "scenario": "ssp245",
+ "year": 2050,
+ "raise_m": 1.5,
+ "before": {
+  "water_level_m": 1.2,
+  "margin_m": 0.51,
+  "flood_score": 0.745,
+  "heat_score": 0.699,
+  "salt_score": 0.607,
+  "risk_score": 0.617,
+  "risk_level": "high",
+  "flood_year": 2121,
+  "main_threat": "flooding",
+  "action": "Flood wall, waterproofing and pumps"
+ },
+ "after": {
+  "water_level_m": 1.2,
+  "margin_m": 2.01,
+  "flood_score": 0.0,
+  "heat_score": 0.699,
+  "salt_score": 0.607,
+  "risk_score": 0.228,
+  "risk_level": "low",
+  "flood_year": null,
+  "main_threat": "heat",
+  "action": "Monitor; review every 5 years"
+ },
+ "years_gained": "beyond 2150",
+ "risk_reduction": 0.389
+}

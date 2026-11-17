@@ -1,0 +1,30 @@
+{
+ "_mock": "SYNTHETIC TEST DATA - not real results. Same shape as the live API.",
+ "region": "chennai",
+ "updated_at": "2026-11-17T12:45:58.779454",
+ "sst": {
+  "sst_latest_c": 29.1,
+  "sst_mean_92d_c": 29.4,
+  "sst_max_92d_c": 30.6
+ },
+ "marine_heatwave": {
+  "mhw_days_last_year": 41,
+  "mhw_category_latest": 0,
+  "mhw_max_category": 2,
+  "mhw_latest_date": "2026-11-15",
+  "pixel_lon": 80.36
+ },
+ "era5": {
+  "year": 2025,
+  "onshore_fraction": 0.52,
+  "rh_mean": 74.3,
+  "t_mean_c": 29.0,
+  "t_p95_c": 36.2
+ },
+ "climate_factor": 0.466,
+ "available": {
+  "sst": true,
+  "mhw": true,
+  "era5": true
+ }
+}

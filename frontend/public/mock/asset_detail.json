@@ -1,0 +1,134 @@
+{
+ "_mock": "SYNTHETIC TEST DATA - not real results. Same shape as the live API.",
+ "asset": {
+  "type": "Feature",
+  "geometry": {
+   "type": "Point",
+   "coordinates": [
+    80.27561405643694,
+    13.0003187197369
+   ]
+  },
+  "properties": {
+   "id": "osm-node-1027",
+   "name": "Test Substation 27",
+   "type": "substation",
+   "voltage_kv": 110.0,
+   "operator": null,
+   "ground_elev_m": 1.41,
+   "base_elev_m": 1.71,
+   "dist_coast_km": 0.479,
+   "hospitals_nearby": 1,
+   "criticality": 0.68,
+   "subsidence_mm_yr": 0.0,
+   "source": "openstreetmap"
+  }
+ },
+ "scenario": "ssp245",
+ "timeline": [
+  {
+   "year": 2030,
+   "risk_score": 0.591,
+   "risk_level": "high",
+   "flood_score": 0.694,
+   "heat_score": 0.699,
+   "salt_score": 0.607,
+   "water_level_m": 1.097,
+   "margin_m": 0.613,
+   "flood_year": 2121,
+   "main_threat": "flooding",
+   "action": "Flood wall, waterproofing and pumps"
+  },
+  {
+   "year": 2040,
+   "risk_score": 0.603,
+   "risk_level": "high",
+   "flood_score": 0.718,
+   "heat_score": 0.699,
+   "salt_score": 0.607,
+   "water_level_m": 1.145,
+   "margin_m": 0.565,
+   "flood_year": 2121,
+   "main_threat": "flooding",
+   "action": "Flood wall, waterproofing and pumps"
+  },
+  {
+   "year": 2050,
+   "risk_score": 0.617,
+   "risk_level": "high",
+   "flood_score": 0.745,
+   "heat_score": 0.699,
+   "salt_score": 0.607,
+   "water_level_m": 1.2,
+   "margin_m": 0.51,
+   "flood_year": 2121,
+   "main_threat": "flooding",
+   "action": "Flood wall, waterproofing and pumps"
+  },
+  {
+   "year": 2060,
+   "risk_score": 0.633,
+   "risk_level": "high",
+   "flood_score": 0.775,
+   "heat_score": 0.699,
+   "salt_score": 0.607,
+   "water_level_m": 1.26,
+   "margin_m": 0.45,
+   "flood_year": 2121,
+   "main_threat": "flooding",
+   "action": "Flood wall, waterproofing and pumps"
+  },
+  {
+   "year": 2070,
+   "risk_score": 0.651,
+   "risk_level": "high",
+   "flood_score": 0.808,
+   "heat_score": 0.699,
+   "salt_score": 0.607,
+   "water_level_m": 1.327,
+   "margin_m": 0.383,
+   "flood_year": 2121,
+   "main_threat": "flooding",
+   "action": "Flood wall, waterproofing and pumps"
+  },
+  {
+   "year": 2080,
+   "risk_score": 0.67,
+   "risk_level": "high",
+   "flood_score": 0.845,
+   "heat_score": 0.699,
+   "salt_score": 0.607,
+   "water_level_m": 1.399,
+   "margin_m": 0.311,
+   "flood_year": 2121,
+   "main_threat": "flooding",
+   "action": "Flood wall, waterproofing and pumps"
+  },
+  {
+   "year": 2090,
+   "risk_score": 0.69,
+   "risk_level": "high",
+   "flood_score": 0.883,
+   "heat_score": 0.699,
+   "salt_score": 0.607,
+   "water_level_m": 1.476,
+   "margin_m": 0.234,
+   "flood_year": 2121,
+   "main_threat": "flooding",
+   "action": "Flood wall, waterproofing and pumps"
+  },
+  {
+   "year": 2100,
+   "risk_score": 0.712,
+   "risk_level": "high",
+   "flood_score": 0.925,
+   "heat_score": 0.699,
+   "salt_score": 0.607,
+   "water_level_m": 1.56,
+   "margin_m": 0.15,
+   "flood_year": 2121,
+   "main_threat": "flooding",
+   "action": "Flood wall, waterproofing and pumps"
+  }
+ ]
+}

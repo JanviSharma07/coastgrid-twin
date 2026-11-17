@@ -1,0 +1,15 @@
+{
+ "_mock": "SYNTHETIC TEST DATA - not real results. Same shape as the live API.",
+ "status": "ok",
+ "version": "1.0.0",
+ "regions_built": {
+  "chennai": {
+   "built_at": "2026-11-17T12:45:58.779454+00:00",
+   "assets": 42,
+   "hospitals": 25,
+   "sea_level_source": "IPCC AR6 WG1 global mean projections (interim; replace with NASA tool values for the region)",
+   "grid_points": 2948,
+   "seconds": 0.5
+  }
+ }
+}

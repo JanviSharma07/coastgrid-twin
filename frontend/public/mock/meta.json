@@ -1,0 +1,124 @@
+{
+ "_mock": "SYNTHETIC TEST DATA - not real results. Same shape as the live API.",
+ "regions": [
+  {
+   "id": "chennai",
+   "name": "Chennai, Tamil Nadu",
+   "country": "India",
+   "center": [
+    13.05,
+    80.24
+   ],
+   "zoom": 11,
+   "bbox": [
+    12.85,
+    80.1,
+    13.25,
+    80.36
+   ]
+  }
+ ],
+ "scenarios": [
+  {
+   "id": "ssp126",
+   "label": "SSP1-2.6 (Low emissions)"
+  },
+  {
+   "id": "ssp245",
+   "label": "SSP2-4.5 (Intermediate)"
+  },
+  {
+   "id": "ssp585",
+   "label": "SSP5-8.5 (High emissions)"
+  }
+ ],
+ "years": [
+  2030,
+  2040,
+  2050,
+  2060,
+  2070,
+  2080,
+  2090,
+  2100
+ ],
+ "default": {
+  "region": "chennai",
+  "scenario": "ssp245",
+  "year": 2050
+ },
+ "model": {
+  "extreme_water_allowance_m": 1.0,
+  "default_plinth_m": 0.3,
+  "flood_margin_scale_m": 2.0,
+  "heat_decay_km": 10.0,
+  "salt_decay_km": 3.0,
+  "w_flood": 0.6,
+  "w_heat": 0.2,
+  "w_salt": 0.2,
+  "crit_floor": 0.6,
+  "hospital_radius_km": 3.0,
+  "high": 0.55,
+  "medium": 0.3,
+  "safe_min_margin_m": 2.0,
+  "safe_min_coast_km": 2.0,
+  "safe_max_substation_km": 4.0,
+  "safe_max_sites": 10,
+  "safe_min_spacing_km": 1.0
+ },
+ "sources": [
+  {
+   "layer": "Power assets, hospitals, coastline",
+   "name": "OpenStreetMap (Overpass API)",
+   "url": "https://www.openstreetmap.org/copyright",
+   "licence": "ODbL"
+  },
+  {
+   "layer": "Ground elevation",
+   "name": "Copernicus DEM GLO-90 via Open-Meteo Elevation API",
+   "url": "https://open-meteo.com/en/docs/elevation-api",
+   "licence": "Copernicus DEM licence / CC BY 4.0"
+  },
+  {
+   "layer": "Sea-level rise projections",
+   "name": "IPCC AR6 sea-level projections (NASA Sea Level Projection Tool)",
+   "url": "https://sealevel.nasa.gov/data_tools/17",
+   "licence": "Public"
+  },
+  {
+   "layer": "Land subsidence",
+   "name": "Nature Sustainability (2025) Chennai hotspots; NISAR / Sentinel-1 planned",
+   "url": "https://asf.alaska.edu/notices/nisar-l-band-data-now-publicly-available/",
+   "licence": "Public"
+  },
+  {
+   "layer": "Marine heatwaves",
+   "name": "NOAA Coral Reef Watch Marine Heatwave Watch (5 km)",
+   "url": "https://coralreefwatch.noaa.gov/product/marine_heatwave/",
+   "licence": "Public domain"
+  },
+  {
+   "layer": "Sea surface temperature",
+   "name": "Open-Meteo Marine API",
+   "url": "https://open-meteo.com/en/docs/marine-weather-api",
+   "licence": "CC BY 4.0"
+  },
+  {
+   "layer": "Wind, humidity, temperature",
+   "name": "ERA5 reanalysis via Open-Meteo Historical API",
+   "url": "https://open-meteo.com/en/docs/historical-weather-api",
+   "licence": "CC BY 4.0"
+  },
+  {
+   "layer": "Coastal vulnerability (reference)",
+   "name": "INCOIS Coastal Vulnerability Index",
+   "url": "https://incois.gov.in/documents/ITCOocean/Coastal_Vulnerability_Mapping.pdf",
+   "licence": "Reference"
+  }
+ ],
+ "risk_levels": {
+  "high": ">= 0.55",
+  "medium": ">= 0.3",
+  "low": "< 0.3"
+ }
+}

@@ -42,13 +42,32 @@
   2090,
   2100
  ],
+ "surge_levels": [
+  {
+   "value": 0.5,
+   "label": "High tide only (0.5 m)"
+  },
+  {
+   "value": 1.0,
+   "label": "Moderate storm (1.0 m)"
+  },
+  {
+   "value": 1.5,
+   "label": "Cyclone Vardah-like (1.5 m)"
+  },
+  {
+   "value": 2.0,
+   "label": "Severe cyclone (2.0 m)"
+  }
+ ],
  "default": {
   "region": "chennai",
   "scenario": "ssp245",
-  "year": 2050
+  "year": 2050,
+  "surge": 1.5
  },
  "model": {
-  "extreme_water_allowance_m": 1.0,
+  "extreme_water_allowance_m": 1.5,
   "default_plinth_m": 0.3,
   "flood_margin_scale_m": 2.0,
   "heat_decay_km": 10.0,
@@ -75,9 +94,15 @@
   },
   {
    "layer": "Ground elevation",
-   "name": "Copernicus DEM GLO-90 via Open-Meteo Elevation API",
-   "url": "https://open-meteo.com/en/docs/elevation-api",
-   "licence": "Copernicus DEM licence / CC BY 4.0"
+   "name": "Copernicus DEM GLO-30 (30 m) via Microsoft Planetary Computer",
+   "url": "https://planetarycomputer.microsoft.com/dataset/cop-dem-glo-30",
+   "licence": "Copernicus DEM licence"
+  },
+  {
+   "layer": "Storm surge reference",
+   "name": "IMD report on Cyclone Vardah (2016)",
+   "url": "https://rsmcnewdelhi.imd.gov.in/uploads/report/26/26_af079d_vardah.pdf",
+   "licence": "Public"
   },
   {
    "layer": "Sea-level rise projections",

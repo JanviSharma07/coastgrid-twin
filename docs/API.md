@@ -4,7 +4,7 @@ Base URL: `http://127.0.0.1:8000` locally, or the deployed URL (set as `VITE_API
 Interactive docs: `<base>/docs`.
 
 All responses are JSON. Map data is **GeoJSON** (`[longitude, latitude]` order). Every endpoint has a
-sample response in `frontend/public/mock/` (synthetic test data with the same shape).
+sample response in `frontend/public/mock/` (synthetic test data with the same shape, default surge 1.5).
 
 Common query parameters:
 
@@ -13,6 +13,7 @@ Common query parameters:
 | `region` | `chennai` | `chennai` |
 | `scenario` | `ssp126` (low), `ssp245` (intermediate), `ssp585` (high emissions) | `ssp245` |
 | `year` | `2030, 2040, 2050, 2060, 2070, 2080, 2090, 2100` | `2050` |
+| `surge` | Storm surge + tide on top of sea level, metres: `0.5` (high tide), `1.0`, `1.5` (Cyclone Vardah-like), `2.0` | `1.5` |
 
 ## Endpoints
 
@@ -20,11 +21,11 @@ Common query parameters:
 |---|---|---|---|
 | GET | `/api/health` | Status and when each region was last built | `health.json` |
 | GET | `/api/meta` | Regions (centre, zoom, bbox), scenarios, years, defaults, model parameters, data sources | `meta.json` |
-| GET | `/api/risk?region&scenario&year` | Summary counts + GeoJSON of every asset with its risk (sorted, highest first) | `risk_<scenario>_<year>.json` |
-| GET | `/api/priorities?region&scenario&year&limit=10&type=` | Ranked action list | `priorities_<scenario>_<year>.json` |
+| GET | `/api/risk?region&scenario&year&surge` | Summary counts + GeoJSON of every asset with its risk (sorted, highest first) | `risk_<scenario>_<year>.json` |
+| GET | `/api/priorities?region&scenario&year&surge&limit=10&type=` | Ranked action list | `priorities_<scenario>_<year>.json` |
 | GET | `/api/assets?region&type=` | GeoJSON of assets (no risk) | `assets.json` |
-| GET | `/api/assets/{id}?scenario` | One asset + risk timeline 2030–2100 | `asset_detail.json` |
-| GET | `/api/flood-zones?region&scenario&year` | GeoJSON (Multi)Polygon of land flooded in an extreme event | `flood-zones_<scenario>_<year>.json` |
+| GET | `/api/assets/{id}?scenario&surge` | One asset + risk timeline 2030–2100 | `asset_detail.json` |
+| GET | `/api/flood-zones?region&scenario&year&surge` | GeoJSON (Multi)Polygon of land flooded in an extreme event | `flood-zones_<scenario>_<year>.json` |
 | GET | `/api/safe-sites?region&scenario` | Top 10 safe sites for new solar + battery | `safe-sites_<scenario>.json` |
 | GET | `/api/sea-level?region` | Sea-level rise by year for all scenarios (median + likely range) | `sea-level.json` |
 | GET | `/api/ocean?region` | Sea temperature, marine heatwave days, onshore wind share, humidity | `ocean.json` |
@@ -45,7 +46,7 @@ Common query parameters:
 | `risk_score` | 0–1 |
 | `risk_level` | `high` (≥ 0.55), `medium` (≥ 0.30), `low` |
 | `flood_score`, `heat_score`, `salt_score` | 0–1 components |
-| `water_level_m` | Extreme water level in that year (sea-level rise + sinking + 1.0 m tide/surge allowance) |
+| `water_level_m` | Extreme water level in that year (sea-level rise + land sinking + surge) |
 | `margin_m` | `base_elev_m - water_level_m` (negative = under water) |
 | `flood_year` | First year water reaches the base (`null` = not before 2150) |
 | `main_threat` | `flooding`, `heat` or `salt` |
@@ -57,7 +58,7 @@ Common query parameters:
 
 Request:
 ```json
-{ "asset_id": "osm-node-123", "scenario": "ssp245", "year": 2050, "raise_m": 1.5, "water_allowance_m": null }
+{ "asset_id": "osm-node-123", "scenario": "ssp245", "year": 2050, "raise_m": 1.5, "surge": 1.5 }
 ```
 Response: `before` and `after` (same fields as risk), `years_gained` (number, `"beyond 2150"` or `null`),
 `risk_reduction`.

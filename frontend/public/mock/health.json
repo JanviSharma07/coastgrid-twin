@@ -4,12 +4,14 @@
  "version": "1.0.0",
  "regions_built": {
   "chennai": {
-   "built_at": "2026-11-17T12:45:58.779454+00:00",
-   "assets": 42,
+   "built_at": "2026-11-17T13:32:11.417916+00:00",
+   "assets": 43,
+   "osm_features": 48,
    "hospitals": 25,
+   "elevation_source": "Copernicus DEM GLO-30 (30 m)",
+   "grid_cell_m": 925,
    "sea_level_source": "IPCC AR6 WG1 global mean projections (interim; replace with NASA tool values for the region)",
-   "grid_points": 2948,
-   "seconds": 0.5
+   "seconds": 1.0
   }
  }
 }

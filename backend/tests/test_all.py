@@ -75,9 +75,25 @@ def test_risk_and_priorities(client):
 
 
 def test_flood_zones_grow(client):
-    a = client.get("/api/flood-zones", params={"scenario": "ssp585", "year": 2030}).json()
-    b = client.get("/api/flood-zones", params={"scenario": "ssp585", "year": 2100}).json()
-    assert b["features"][0]["properties"]["area_km2"] >= a["features"][0]["properties"]["area_km2"] > 0
+    def area(**p):
+        return client.get("/api/flood-zones", params=p).json()["features"][0]["properties"]["area_km2"]
+    assert area(scenario="ssp585", year=2100) >= area(scenario="ssp585", year=2030) > 0
+    assert area(scenario="ssp245", year=2050, surge=2.0) >= area(scenario="ssp245", year=2050, surge=0.5)
+    assert client.get("/api/flood-zones", params={"surge": 0.7}).status_code == 422
+
+
+def test_duplicate_panels_merged(client):
+    solar = client.get("/api/assets", params={"type": "solar"}).json()["features"]
+    near = [f for f in solar if abs(f["geometry"]["coordinates"][1] - 13.0697) < 0.001]
+    assert len(near) == 1
+
+
+def test_surge_raises_risk(client):
+    lo = client.get("/api/risk", params={"scenario": "ssp585", "year": 2100, "surge": 0.5}).json()
+    hi = client.get("/api/risk", params={"scenario": "ssp585", "year": 2100, "surge": 2.0}).json()
+    s_lo = {f["properties"]["id"]: f["properties"]["risk_score"] for f in lo["features"]}
+    assert all(f["properties"]["risk_score"] >= s_lo[f["properties"]["id"]] for f in hi["features"])
+    assert client.get("/api/meta").json()["default"]["surge"] == 1.5
 
 
 def test_simulate_raising_helps(client):

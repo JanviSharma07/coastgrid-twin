@@ -229,3 +229,93 @@ def fetch_era5_climate(lat: float, lon: float, sea_bearing: float, cache: Cache)
     except Exception as e:
         log.warning("ERA5 climate unavailable: %s", e)
         return None
+
+
+# ---------------------------------------------------------------------------
+# 30 m elevation: Copernicus DEM GLO-30 (Microsoft Planetary Computer, AWS Open Data fallback)
+# ---------------------------------------------------------------------------
+PC_STAC_SEARCH = "https://planetarycomputer.microsoft.com/api/stac/v1/search"
+PC_SIGN = "https://planetarycomputer.microsoft.com/api/sas/v1/sign"
+AWS_COP30 = "https://copernicus-dem-30m.s3.amazonaws.com/{n}/{n}.tif"
+
+
+def _tile_names(bbox: list[float]) -> list[str]:
+    s, w, n, e = bbox
+    names = []
+    for lat in range(math.floor(s), math.floor(n - 1e-9) + 1):
+        for lon in range(math.floor(w), math.floor(e - 1e-9) + 1):
+            ns, ew = ("N" if lat >= 0 else "S"), ("E" if lon >= 0 else "W")
+            names.append(f"Copernicus_DSM_COG_10_{ns}{abs(lat):02d}_00_{ew}{abs(lon):03d}_00_DEM")
+    return names
+
+
+def _download(c: httpx.Client, url: str, dest: Path) -> None:
+    tmp = dest.with_suffix(".part")
+    with c.stream("GET", url) as r:
+        r.raise_for_status()
+        with tmp.open("wb") as fh:
+            for chunk in r.iter_bytes(1 << 20):
+                fh.write(chunk)
+    tmp.replace(dest)
+
+
+def fetch_dem_tiles(bbox: list[float], cache: Cache) -> list[Path]:
+    """Download the 1x1 degree Copernicus GLO-30 tiles covering bbox (cached). Returns local paths."""
+    folder = cache.dir / "dem30"
+    folder.mkdir(exist_ok=True)
+    wanted = _tile_names(bbox)
+    paths = [folder / f"{n}.tif" for n in wanted]
+    if all(p.exists() for p in paths):
+        return paths
+    s, w, n, e = bbox
+    hrefs: dict[str, str] = {}
+    with _client() as c:
+        try:  # Microsoft Planetary Computer (free, no account)
+            r = c.post(PC_STAC_SEARCH, json={"collections": ["cop-dem-glo-30"], "bbox": [w, s, e, n], "limit": 20})
+            r.raise_for_status()
+            for item in r.json().get("features", []):
+                href = item["assets"]["data"]["href"]
+                name = Path(href.split("?")[0]).stem
+                if name in wanted:
+                    signed = _get_json(c, PC_SIGN, params={"href": href})["href"]
+                    hrefs[name] = signed
+            log.info("Planetary Computer: %d of %d DEM tiles found", len(hrefs), len(wanted))
+        except Exception as e_:
+            log.warning("Planetary Computer unavailable (%s); using AWS Open Data mirror", e_)
+        for name, path in zip(wanted, paths):
+            if path.exists():
+                continue
+            url = hrefs.get(name) or AWS_COP30.format(n=name)
+            log.info("Downloading 30 m DEM tile %s (~30-60 MB)...", name)
+            try:
+                _download(c, url, path)
+            except httpx.HTTPError:
+                if name in hrefs:  # retry on the mirror
+                    _download(c, AWS_COP30.format(n=name), path)
+                else:
+                    raise
+    return paths
+
+
+def fetch_dem(bbox: list[float], cache: Cache):
+    """Mosaic of the 30 m DEM clipped to bbox: (elevation array north-up, affine transform)."""
+    import numpy as np
+    import rasterio
+    from rasterio.merge import merge
+
+    npz = cache.dir / "dem30_clip.npz"
+    if npz.exists():
+        d = np.load(npz)
+        from affine import Affine
+        return d["elev"], Affine(*d["transform"])
+    paths = fetch_dem_tiles(bbox, cache)
+    s, w, n, e = bbox
+    srcs = [rasterio.open(p) for p in paths]
+    try:
+        arr, transform = merge(srcs, bounds=(w, s, e, n))
+    finally:
+        for src in srcs:
+            src.close()
+    elev = arr[0].astype("float32")
+    np.savez_compressed(npz, elev=elev, transform=np.array(list(transform)[:6]))
+    return elev, transform

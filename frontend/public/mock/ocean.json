@@ -1,7 +1,7 @@
 {
  "_mock": "SYNTHETIC TEST DATA - not real results. Same shape as the live API.",
  "region": "chennai",
- "updated_at": "2026-11-17T12:45:58.779454",
+ "updated_at": "2026-11-17T13:32:11.417916",
  "sst": {
   "sst_latest_c": 29.1,
   "sst_mean_92d_c": 29.4,

@@ -7,17 +7,17 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     80.136,
-     13.054
+     80.14583,
+     12.92083
     ]
    },
    "properties": {
     "rank": 1,
-    "ground_elev_m": 16.76,
-    "margin_2100_m": 15.14,
-    "dist_coast_km": 16.43,
-    "nearest_substation_km": 0.08,
-    "score": 0.991
+    "ground_elev_m": 15.98,
+    "margin_2100_m": 13.36,
+    "dist_coast_km": 16.12,
+    "nearest_substation_km": 0.15,
+    "score": 0.981
    }
   },
   {
@@ -25,17 +25,17 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     80.142,
-     12.958
+     80.14583,
+     13.17917
     ]
    },
    "properties": {
     "rank": 2,
-    "ground_elev_m": 15.63,
-    "margin_2100_m": 14.01,
-    "dist_coast_km": 15.43,
-    "nearest_substation_km": 0.13,
-    "score": 0.983
+    "ground_elev_m": 14.42,
+    "margin_2100_m": 11.8,
+    "dist_coast_km": 14.71,
+    "nearest_substation_km": 0.17,
+    "score": 0.979
    }
   },
   {
@@ -43,17 +43,17 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     80.172,
-     12.898
+     80.1375,
+     13.05417
     ]
    },
    "properties": {
     "rank": 3,
-    "ground_elev_m": 13.29,
-    "margin_2100_m": 11.67,
-    "dist_coast_km": 12.72,
-    "nearest_substation_km": 0.16,
-    "score": 0.98
+    "ground_elev_m": 16.35,
+    "margin_2100_m": 13.73,
+    "dist_coast_km": 16.28,
+    "nearest_substation_km": 0.22,
+    "score": 0.973
    }
   },
   {
@@ -61,17 +61,17 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     80.124,
-     12.952
+     80.12917,
+     13.0125
     ]
    },
    "properties": {
     "rank": 4,
-    "ground_elev_m": 17.61,
-    "margin_2100_m": 15.99,
-    "dist_coast_km": 17.47,
-    "nearest_substation_km": 0.16,
-    "score": 0.98
+    "ground_elev_m": 13.03,
+    "margin_2100_m": 10.41,
+    "dist_coast_km": 16.42,
+    "nearest_substation_km": 0.26,
+    "score": 0.968
    }
   },
   {
@@ -79,17 +79,17 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     80.184,
-     12.928
+     80.17083,
+     12.89583
     ]
    },
    "properties": {
     "rank": 5,
-    "ground_elev_m": 12.42,
-    "margin_2100_m": 10.8,
-    "dist_coast_km": 11.97,
-    "nearest_substation_km": 0.19,
-    "score": 0.976
+    "ground_elev_m": 13.11,
+    "margin_2100_m": 10.49,
+    "dist_coast_km": 12.77,
+    "nearest_substation_km": 0.28,
+    "score": 0.965
    }
   },
   {
@@ -97,17 +97,17 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     80.124,
-     13.102
+     80.14583,
+     13.14583
     ]
    },
    "properties": {
     "rank": 6,
-    "ground_elev_m": 17.86,
-    "margin_2100_m": 16.24,
-    "dist_coast_km": 17.62,
-    "nearest_substation_km": 0.2,
-    "score": 0.975
+    "ground_elev_m": 14.1,
+    "margin_2100_m": 11.48,
+    "dist_coast_km": 14.57,
+    "nearest_substation_km": 0.31,
+    "score": 0.962
    }
   },
   {
@@ -115,17 +115,17 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     80.148,
-     13.09
+     80.1375,
+     13.1125
     ]
    },
    "properties": {
     "rank": 7,
-    "ground_elev_m": 15.84,
-    "margin_2100_m": 14.22,
-    "dist_coast_km": 15.47,
-    "nearest_substation_km": 0.22,
-    "score": 0.972
+    "ground_elev_m": 15.93,
+    "margin_2100_m": 13.31,
+    "dist_coast_km": 15.94,
+    "nearest_substation_km": 0.32,
+    "score": 0.96
    }
   },
   {
@@ -133,17 +133,17 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     80.124,
-     13.084
+     80.17917,
+     12.92917
     ]
    },
    "properties": {
     "rank": 8,
-    "ground_elev_m": 18.26,
-    "margin_2100_m": 16.64,
-    "dist_coast_km": 18.15,
-    "nearest_substation_km": 0.23,
-    "score": 0.971
+    "ground_elev_m": 12.65,
+    "margin_2100_m": 10.03,
+    "dist_coast_km": 12.41,
+    "nearest_substation_km": 0.35,
+    "score": 0.957
    }
   },
   {
@@ -151,17 +151,17 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     80.142,
-     13.18
+     80.14583,
+     12.99583
     ]
    },
    "properties": {
     "rank": 9,
-    "ground_elev_m": 15.05,
-    "margin_2100_m": 13.43,
-    "dist_coast_km": 15.14,
-    "nearest_substation_km": 0.27,
-    "score": 0.966
+    "ground_elev_m": 13.96,
+    "margin_2100_m": 11.34,
+    "dist_coast_km": 14.56,
+    "nearest_substation_km": 0.41,
+    "score": 0.949
    }
   },
   {
@@ -169,17 +169,17 @@
    "geometry": {
     "type": "Point",
     "coordinates": [
-     80.13,
-     13.012
+     80.12917,
+     12.95417
     ]
    },
    "properties": {
     "rank": 10,
-    "ground_elev_m": 13.24,
-    "margin_2100_m": 11.62,
-    "dist_coast_km": 16.32,
-    "nearest_substation_km": 0.27,
-    "score": 0.966
+    "ground_elev_m": 16.79,
+    "margin_2100_m": 14.17,
+    "dist_coast_km": 16.88,
+    "nearest_substation_km": 0.45,
+    "score": 0.944
    }
   }
  ]

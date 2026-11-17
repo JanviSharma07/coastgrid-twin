@@ -8,7 +8,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from sqlalchemy import (Float, ForeignKey, Index, Integer, String, Text, DateTime,
-                        create_engine, JSON)
+                        create_engine, inspect, JSON)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 from .config import settings
@@ -64,6 +64,7 @@ class RiskResult(Base):
     region: Mapped[str] = mapped_column(String(32))
     scenario: Mapped[str] = mapped_column(String(16))
     year: Mapped[int] = mapped_column(Integer)
+    surge_m: Mapped[float] = mapped_column(Float)
     water_level_m: Mapped[float] = mapped_column(Float)
     margin_m: Mapped[float] = mapped_column(Float)
     flood_score: Mapped[float] = mapped_column(Float)
@@ -75,7 +76,7 @@ class RiskResult(Base):
     main_threat: Mapped[str] = mapped_column(String(32))
     action: Mapped[str] = mapped_column(String(200))
 
-    __table_args__ = (Index("ix_risk_lookup", "region", "scenario", "year"),)
+    __table_args__ = (Index("ix_risk_lookup", "region", "scenario", "year", "surge_m"),)
 
 
 class SeaLevel(Base):
@@ -96,10 +97,11 @@ class FloodZone(Base):
     region: Mapped[str] = mapped_column(String(32))
     scenario: Mapped[str] = mapped_column(String(16))
     year: Mapped[int] = mapped_column(Integer)
+    surge_m: Mapped[float] = mapped_column(Float)
     area_km2: Mapped[float] = mapped_column(Float)
     geojson: Mapped[str] = mapped_column(Text)
 
-    __table_args__ = (Index("ix_flood_lookup", "region", "scenario", "year"),)
+    __table_args__ = (Index("ix_flood_lookup", "region", "scenario", "year", "surge_m"),)
 
 
 class SafeSite(Base):
@@ -129,5 +131,15 @@ class RegionData(Base):
     __table_args__ = (Index("ix_region_key", "region", "key", unique=True),)
 
 
-def init_db() -> None:
+SCHEMA_CHECK = {"risk_results": "surge_m", "flood_zones": "surge_m"}
+
+
+def init_db(reset_if_outdated: bool = False) -> None:
+    """Create tables. If an older table layout is found, rebuild the tables (pipeline only)."""
+    if reset_if_outdated:
+        insp = inspect(engine)
+        for table, col in SCHEMA_CHECK.items():
+            if insp.has_table(table) and col not in {c["name"] for c in insp.get_columns(table)}:
+                Base.metadata.drop_all(engine)
+                break
     Base.metadata.create_all(engine)

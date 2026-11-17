@@ -92,11 +92,7 @@ def flooded_cells(elev: np.ndarray, sea: np.ndarray, water_level: float) -> np.n
     ny, nx = elev.shape
     low = (elev < water_level) & ~sea
     out = np.zeros_like(low)
-    q: deque[tuple[int, int]] = deque()
-    for i in range(ny):
-        for j in range(nx):
-            if sea[i, j]:
-                q.append((i, j))
+    q: deque[tuple[int, int]] = deque(map(tuple, np.argwhere(sea).tolist()))
     seen = sea.copy()
     while q:
         i, j = q.popleft()
@@ -134,3 +130,62 @@ def grid_value_at(grid: np.ndarray, lats: np.ndarray, lons: np.ndarray, lat: flo
     i = int(np.abs(lats - lat).argmin())
     j = int(np.abs(lons - lon).argmin())
     return float(grid[i, j])
+
+
+# ---------------------------------------------------------------------------
+# Raster helpers (30 m DEM)
+# ---------------------------------------------------------------------------
+def aggregate_dem(elev: np.ndarray, transform, block: int, pct: float = 20.0):
+    """Aggregate a north-up DEM into block x block cells using a low percentile.
+
+    A low percentile (instead of the mean) keeps narrow creeks and the ground between
+    buildings, which matters because Copernicus DEM is a surface model.
+    Returns (grid, lats_desc, lons, cell_transform).
+    """
+    from affine import Affine
+    ny, nx = (elev.shape[0] // block) * block, (elev.shape[1] // block) * block
+    e = elev[:ny, :nx].reshape(ny // block, block, nx // block, block).transpose(0, 2, 1, 3)
+    grid = np.percentile(e.reshape(ny // block, nx // block, -1), pct, axis=2)
+    t = transform * Affine.scale(block, block)
+    lons = np.array([t.c + t.a * (j + 0.5) for j in range(grid.shape[1])])
+    lats = np.array([t.f + t.e * (i + 0.5) for i in range(grid.shape[0])])
+    return grid, lats, lons, t
+
+
+def sample_raster(elev: np.ndarray, transform, lat: float, lon: float) -> float:
+    col, row = ~transform * (lon, lat)
+    r, c = int(row), int(col)
+    r = min(max(r, 0), elev.shape[0] - 1)
+    c = min(max(c, 0), elev.shape[1] - 1)
+    return float(elev[r, c])
+
+
+def mask_to_geojson(mask: np.ndarray, transform, epsg: int, simplify: float) -> tuple[dict, float]:
+    """Vectorise a boolean grid into (Multi)Polygon GeoJSON; returns (geometry, area_km2)."""
+    from rasterio import features
+    from shapely.geometry import shape
+    if not mask.any():
+        return {"type": "MultiPolygon", "coordinates": []}, 0.0
+    polys = [shape(g) for g, v in features.shapes(mask.astype("uint8"), mask=mask, transform=transform) if v == 1]
+    geom = unary_union(polys).simplify(simplify, preserve_topology=True)
+    area = to_utm(geom, epsg).area / 1e6
+    gj = mapping(geom)
+    return {"type": gj["type"], "coordinates": _round_coords(gj["coordinates"])}, round(area, 2)
+
+
+def grid_transform(lats_desc: np.ndarray, lons: np.ndarray, step: float):
+    from affine import Affine
+    return Affine(step, 0, float(lons[0]) - step / 2, 0, -step, float(lats_desc[0]) + step / 2)
+
+
+def haversine_km_vec(lat: np.ndarray, lon: np.ndarray, lat2: float, lon2: float) -> np.ndarray:
+    p1, p2 = np.radians(lat), math.radians(lat2)
+    dp, dl = p2 - p1, np.radians(lon2 - lon)
+    a = np.sin(dp / 2) ** 2 + np.cos(p1) * math.cos(p2) * np.sin(dl / 2) ** 2
+    return 2 * 6371.0 * np.arcsin(np.sqrt(a))
+
+
+def coast_distance_km_vec(coast_m, epsg: int, lats: np.ndarray, lons: np.ndarray) -> np.ndarray:
+    t = _to_utm(epsg)
+    x, y = t.transform(lons, lats)
+    return shapely.distance(shapely.points(np.column_stack([x, y])), coast_m) / 1000.0

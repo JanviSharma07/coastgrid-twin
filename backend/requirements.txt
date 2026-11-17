@@ -11,3 +11,4 @@ numpy==2.5.5
 python-dotenv==1.2.4
 reportlab==5.1.0
 pytest==9.2.0
+rasterio==1.5.2

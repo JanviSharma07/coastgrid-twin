@@ -47,8 +47,10 @@ REGIONS: dict[str, dict] = {
         "ocean_point": [13.05, 80.36],
         # UTM zone for metre-accurate distances (EPSG:32644 = WGS84 / UTM 44N)
         "utm_epsg": 32644,
-        # Elevation grid spacing in degrees (~650 m)
+        # Fallback elevation grid spacing in degrees (~650 m), used only if the 30 m DEM is unavailable
         "grid_step_deg": 0.006,
+        # The 30 m DEM is aggregated by this factor for flood modelling (5 x 30 m = ~150 m cells)
+        "dem_block": 5,
         # Land-subsidence hotspots reported for Chennai (Nature Sustainability, 2025):
         # Adyar flood plains, Valasaravakkam, Kodambakkam, Alandur, Tondiarpet.
         # Coordinates are approximate locality centres. Rate tapers from the published
@@ -78,13 +80,23 @@ SCENARIO_IDS = [s["id"] for s in SCENARIOS]
 YEARS = [2030, 2040, 2050, 2060, 2070, 2080, 2090, 2100]
 FLOOD_YEAR_SEARCH = (2025, 2150)  # flood year is reported as "beyond 2150" if not reached
 
+# Extreme-water allowance on top of mean sea level: storm surge + astronomical tide (m).
+# Reference: IMD report on Cyclone Vardah (Dec 2016): ~1 m surge above a 0.47 m tide, ~1.47 m total.
+SURGE_LEVELS = [
+    {"value": 0.5, "label": "High tide only (0.5 m)"},
+    {"value": 1.0, "label": "Moderate storm (1.0 m)"},
+    {"value": 1.5, "label": "Cyclone Vardah-like (1.5 m)"},
+    {"value": 2.0, "label": "Severe cyclone (2.0 m)"},
+]
+SURGE_VALUES = [s["value"] for s in SURGE_LEVELS]
+DEFAULT_SURGE = 1.5
+
 # ---------------------------------------------------------------------------
 # Risk model parameters (see docs/METHODOLOGY.md)
 # ---------------------------------------------------------------------------
 MODEL = {
-    # Extra water on top of mean sea level during an extreme event (tide + storm surge).
-    # Assumption, adjustable per request. Should be set from INCOIS storm-surge guidance.
-    "extreme_water_allowance_m": 1.0,
+    # Default extra water on top of mean sea level (tide + storm surge); see SURGE_LEVELS.
+    "extreme_water_allowance_m": 1.5,
     # Height of equipment base above surrounding ground when not known (plinth). Assumption.
     "default_plinth_m": 0.3,
     # Flood score falls linearly from 1 (water at/above base) to 0 at this margin (m).
@@ -114,8 +126,10 @@ MODEL = {
 SOURCES = [
     {"layer": "Power assets, hospitals, coastline", "name": "OpenStreetMap (Overpass API)",
      "url": "https://www.openstreetmap.org/copyright", "licence": "ODbL"},
-    {"layer": "Ground elevation", "name": "Copernicus DEM GLO-90 via Open-Meteo Elevation API",
-     "url": "https://open-meteo.com/en/docs/elevation-api", "licence": "Copernicus DEM licence / CC BY 4.0"},
+    {"layer": "Ground elevation", "name": "Copernicus DEM GLO-30 (30 m) via Microsoft Planetary Computer",
+     "url": "https://planetarycomputer.microsoft.com/dataset/cop-dem-glo-30", "licence": "Copernicus DEM licence"},
+    {"layer": "Storm surge reference", "name": "IMD report on Cyclone Vardah (2016)",
+     "url": "https://rsmcnewdelhi.imd.gov.in/uploads/report/26/26_af079d_vardah.pdf", "licence": "Public"},
     {"layer": "Sea-level rise projections", "name": "IPCC AR6 sea-level projections (NASA Sea Level Projection Tool)",
      "url": "https://sealevel.nasa.gov/data_tools/17", "licence": "Public"},
     {"layer": "Land subsidence", "name": "Nature Sustainability (2025) Chennai hotspots; NISAR / Sentinel-1 planned",

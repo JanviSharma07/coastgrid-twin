@@ -50,12 +50,12 @@ def _client() -> httpx.Client:
     return httpx.Client(timeout=180, headers={"User-Agent": settings.user_agent}, follow_redirects=True)
 
 
-def _get_json(client: httpx.Client, url: str, params=None, tries: int = 4):
+def _get_json(client: httpx.Client, url: str, params=None, tries: int = 5):
     for attempt in range(tries):
         try:
             r = client.get(url, params=params)
             if r.status_code == 429:
-                wait = 20 * (attempt + 1)
+                wait = 60 * (attempt + 1)
                 log.warning("Rate limited by %s, waiting %ss", url, wait)
                 time.sleep(wait)
                 continue
@@ -144,7 +144,8 @@ def fetch_elevations(points: list[tuple[float, float]], cache: Cache, label: str
                     "longitude": ",".join(f"{p[1]:.5f}" for p in part),
                 })
                 cache.put(key, data)
-                time.sleep(1.5)
+                # Free tier counts each coordinate as a call (~600/minute): 100 points every 11 s
+                time.sleep(11)
             vals = data["elevation"]
             out.extend(float(v) if v is not None and not math.isnan(float(v)) else 0.0 for v in vals)
     return out

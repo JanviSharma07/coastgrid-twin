@@ -15,7 +15,7 @@ from .config import settings
 
 
 def _make_engine():
-    url = settings.database_url
+    url = settings.database_url.strip()  # pasted values often carry a trailing newline
     if url.startswith("postgres://"):  # Supabase sometimes shows this older prefix
         url = url.replace("postgres://", "postgresql+psycopg://", 1)
     elif url.startswith("postgresql://"):

@@ -1,5 +1,10 @@
 import { useEffect } from "react";
-import { MapContainer, TileLayer, GeoJSON, CircleMarker, Circle, Popup, Tooltip, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, GeoJSON, CircleMarker, Circle, Marker, Popup, Tooltip, useMap } from "react-leaflet";
+import L from "leaflet";
+import { typeIcon, TYPE_STYLE } from "./markers";
+
+const hospIcon = (c) => L.divIcon({ className: "gm-wrap", html: `<span class="gm-hosp" style="--f:${c}">+</span>`, iconSize: [16, 16], iconAnchor: [8, 8] });
+const placeIcon = (name) => L.divIcon({ className: "gm-wrap", html: `<span class="gm-place">${name.replace(/[<>&]/g, "")}</span>`, iconSize: [0, 0] });
 import "leaflet/dist/leaflet.css";
 import { RISK_COLORS, SAFE_COLOR, SINK_COLOR, FLOOD_COLOR, band, floodYearText, typeLabel } from "../lib/utils";
 
@@ -44,6 +49,7 @@ export default function AssetMap({
   flood = true,
   legend = true,
   assetColor, // optional (props) => colour, overrides colour-by (used by animations)
+  floodLayers, // optional [{ data, key, opacity }] stacked flood layers (darker = floods in smaller storms)
 }) {
   const sites = safeSites?.features || [];
   const cf = COLOR_FIELDS[colorBy] || COLOR_FIELDS.risk;
@@ -53,20 +59,28 @@ export default function AssetMap({
       <div className="map-container" style={{ height }}>
         <MapContainer key={mapKey} center={center} zoom={zoom} scrollWheelZoom style={{ height: "100%", width: "100%" }}>
           <TileLayer
-            attribution="&copy; OpenStreetMap contributors"
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; OpenStreetMap contributors &copy; CARTO'
+            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           />
           <FlyTo focus={focus} />
 
-          {flood && layers.flood && floodZones?.features?.length > 0 && (
+          {flood && layers.flood && floodLayers?.map((fl) => fl.data?.features?.length > 0 && (
+            <GeoJSON key={fl.key} data={fl.data}
+              style={{ color: FLOOD_COLOR, weight: 1, fillColor: "#0ea5e9", fillOpacity: fl.opacity, className: "flood-anim" }} />
+          ))}
+          {flood && layers.flood && !floodLayers && floodZones?.features?.length > 0 && (
             <GeoJSON
               key={layerKey}
               data={floodZones}
-              style={{ color: FLOOD_COLOR, weight: 1, fillColor: FLOOD_COLOR, fillOpacity: 0.35 }}
+              style={{ color: FLOOD_COLOR, weight: 1.5, fillColor: "#0ea5e9", fillOpacity: 0.45, className: "flood-anim" }}
             />
           )}
 
-          {points.map((pt, i) => (
+          {points.map((pt, i) => pt.icon === "hospital" ? (
+            <Marker key={`pt-${i}-${pt.lat}`} position={[pt.lat, pt.lon]} icon={hospIcon(pt.color)}><Tooltip>{pt.label}</Tooltip></Marker>
+          ) : pt.icon === "place" ? (
+            <Marker key={`pt-${i}-${pt.lat}`} position={[pt.lat, pt.lon]} icon={placeIcon(pt.name)}><Tooltip>{pt.label}</Tooltip></Marker>
+          ) : (
             <CircleMarker key={`pt-${i}-${pt.lat}`} center={[pt.lat, pt.lon]} radius={pt.radius || 5}
               pathOptions={{ color: pt.stroke || "#0b1220", weight: pt.weight || 1, fillColor: pt.color, fillOpacity: 0.9 }}>
               <Tooltip>{pt.label}</Tooltip>
@@ -113,16 +127,11 @@ export default function AssetMap({
               const color = assetColor ? assetColor(p) : RISK_COLORS[band(value, model)];
               const selected = p.id === selectedId;
               return (
-                <CircleMarker
+                <Marker
                   key={p.id}
-                  center={[lat, lng]}
-                  radius={(p.voltage_kv >= 220 ? 9 : p.voltage_kv >= 110 ? 7 : 5) + (selected ? 3 : 0)}
-                  pathOptions={{
-                    color: selected ? "#ffffff" : "#0b1220",
-                    weight: selected ? 3 : 1,
-                    fillColor: color,
-                    fillOpacity: 0.95,
-                  }}
+                  position={[lat, lng]}
+                  icon={typeIcon(p, selected ? "sel" : undefined, color)}
+                  zIndexOffset={selected ? 1000 : 0}
                   eventHandlers={{ click: () => onSelect?.(p.id) }}
                 >
                   <Popup>
@@ -133,7 +142,7 @@ export default function AssetMap({
                     <br />First flooded: {floodYearText(p.flood_year)}
                     <br />Action: {p.action}
                   </Popup>
-                </CircleMarker>
+                </Marker>
               );
             })}
         </MapContainer>
@@ -146,13 +155,24 @@ export default function AssetMap({
             <span><i className="dot high"></i> High</span>
             <span><i className="dot medium"></i> Medium</span>
             <span><i className="dot low"></i> Low</span>
-            <span className="legend-note">bigger dot = higher voltage</span>
           </>
         )}
+        {layers.assets && <TypeLegend />}
         {layers.flood && <span><i className="swatch flood"></i> Flooded land</span>}
         {layers.safe && <span><i className="dot safe"></i> Safe site for solar + battery</span>}
         {layers.sinking && <span><i className="dot sink"></i> Land-sinking hotspot</span>}
       </div>}
     </>
+  );
+}
+
+export function TypeLegend() {
+  return (
+    <span className="type-legend">
+      {Object.entries(TYPE_STYLE).map(([k, t]) => (
+        <span key={k}><i className={`gm gm-${t.shape}`} style={{ "--s": "12px", "--f": "#64748b", "--r": t.ring }}></i> {t.label}</span>
+      ))}
+      <span className="legend-note">shape = type · fill = risk · bigger = higher voltage</span>
+    </span>
   );
 }

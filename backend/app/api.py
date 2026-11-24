@@ -241,6 +241,36 @@ def flood_zones(region: str = "chennai", scenario: Scenario = "ssp245", year: in
         "properties": {"scenario": scenario, "year": year, "surge": surge, "area_km2": z.area_km2}}]}
 
 
+@router.get("/trends", tags=["risk"])
+def trends(region: str = "chennai", surge: float = DEFAULT_SURGE, db: Session = Depends(get_db)):
+    """Per scenario and decade: flooded land, assets by risk level, assets with water above the base,
+    and neighbourhoods / hospitals in flooded land. Powers the trend charts."""
+    check_region(region), check_surge(surge)
+    from sqlalchemy import func, case
+    zones = db.execute(select(FloodZone.scenario, FloodZone.year, FloodZone.area_km2).where(
+        FloodZone.region == region, FloodZone.surge_m == surge)).all()
+    if not zones:
+        raise HTTPException(503, "Region data not built yet")
+    counts = db.execute(select(
+        RiskResult.scenario, RiskResult.year,
+        func.sum(case((RiskResult.risk_level == "high", 1), else_=0)),
+        func.sum(case((RiskResult.risk_level == "medium", 1), else_=0)),
+        func.sum(case((RiskResult.risk_level == "low", 1), else_=0)),
+        func.sum(case((RiskResult.margin_m < 0, 1), else_=0)),
+    ).where(RiskResult.region == region, RiskResult.surge_m == surge).group_by(RiskResult.scenario, RiskResult.year)).all()
+    c = {(sc, yr): (int(h or 0), int(m or 0), int(lo or 0), int(f or 0)) for sc, yr, h, m, lo, f in counts}
+    blob = region_blob(db, region, "exposure")
+    flooded = blob.data["flooded"] if blob else {}
+    rows = []
+    for sc, yr, area in sorted(zones, key=lambda z: (z[0], z[1])):
+        h, m, lo, f = c.get((sc, yr), (0, 0, 0, 0))
+        e = flooded.get(f"{sc}|{yr}|{float(surge)}")
+        rows.append({"scenario": sc, "year": yr, "flood_area_km2": area, "high": h, "medium": m, "low": lo,
+                     "assets_flooded": f, "places_flooded": len(e["places"]) if e else None,
+                     "hospitals_flooded": len(e["hospitals"]) if e else None})
+    return {"region": region, "surge": surge, "rows": rows}
+
+
 @router.get("/safe-sites", tags=["hazards"])
 def safe_sites(region: str = "chennai", scenario: Scenario = "ssp245", db: Session = Depends(get_db)):
     check_region(region)

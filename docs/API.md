@@ -84,3 +84,8 @@ Returns 503 until the pipeline has been run for the region with this version.
 
 `/api/meta` lists Chennai, Mumbai and Kochi with `built` (null until the pipeline has run),
 utilities, disaster authority and calibration `notes`.
+
+## GET /api/trends
+
+`region`, `surge` → `rows`: one per scenario × decade with `flood_area_km2`, `high`, `medium`, `low`,
+`assets_flooded` (water above the equipment base), `places_flooded`, `hospitals_flooded`.

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { Play, Pause, RotateCcw } from "lucide-react";
-import AssetMap from "../components/AssetMap";
+import AssetMap, { TypeLegend } from "../components/AssetMap";
 import { InfoBox, Panel } from "../components/ui";
 import { getRisk, getFloodZones } from "../services/api";
 import { YEARS, RISK_COLORS, band, TOOLTIP_STYLE, scenarioOf, surgeOf } from "../lib/utils";
@@ -131,6 +131,7 @@ export default function FutureMap({ region, regionInfo, scenario, surge, model, 
 
         <Panel className="map-main">
           <AssetMap mapKey={`future-${region}`} assets={assets} floodZones={frame?.zones} model={model} assetColor={assetColor}
+            floodLayers={YEARS.slice(0, idx + 1).map((y) => ({ key: `tl-${region}-${scenario}-${surge}-${y}`, data: frames[y]?.zones, opacity: y === year ? 0.32 : 0.1 }))}
             hotspots={sub?.hotspots || []} sinkRadiusKm={sub?.radius_km || 1.5} layers={layers} selectedId={selectedId}
             layerKey={`tl-${region}-${scenario}-${surge}-${year}`} center={regionInfo?.center} zoom={regionInfo?.zoom} height={620}
             legend={false} onSelect={setSelectedId} />
@@ -140,8 +141,9 @@ export default function FutureMap({ region, regionInfo, scenario, surge, model, 
             ) : (
               <><span><i className="dot high"></i> High risk</span><span><i className="dot medium"></i> Medium</span><span><i className="dot low"></i> Low</span></>
             )}
-            <span><i className="swatch flood"></i> Flooded land</span>
+            <span><i className="swatch flood"></i> Flooded land (darker = flooded for longer)</span>
             {layers.sinking && sub?.hotspots?.length > 0 && <span><i className="dot sink"></i> Land-sinking hotspot</span>}
+            <TypeLegend />
           </div>
         </Panel>
       </div>

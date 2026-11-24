@@ -138,3 +138,11 @@ def test_west_facing_sea_mask():
     lats = np.array([19.0, 19.1]); lons = np.array([72.80, 72.90, 73.0])
     m = sea_mask(lats, lons, coast, 270)
     assert m[:, 0].all() and not m[:, 1].any() and not m[:, 2].any()
+
+
+def test_trends(client):
+    d = client.get("/api/trends", params={"surge": 1.5}).json()
+    assert len(d["rows"]) == 24
+    r = {(x["scenario"], x["year"]): x for x in d["rows"]}
+    assert r[("ssp585", 2100)]["flood_area_km2"] >= r[("ssp126", 2030)]["flood_area_km2"]
+    assert r[("ssp585", 2100)]["high"] + r[("ssp585", 2100)]["medium"] + r[("ssp585", 2100)]["low"] > 30

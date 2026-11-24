@@ -4,6 +4,8 @@ import { MapPin, Printer, LoaderCircle, Table2 } from "lucide-react";
 import { getAssetDetail, simulateRisk } from "../services/api";
 import { InfoBox, Panel, ScoreBar, RiskBadge } from "../components/ui";
 import SideView from "../components/SideView";
+import ActionCard from "../components/ActionCard";
+import { assetThreats } from "../lib/solutions";
 import { SCENARIOS, YEARS, RISK_COLORS, band, floodYearText, scenarioOf, surgeOf, typeLabel, TOOLTIP_STYLE, PHASES, phaseOf } from "../lib/utils";
 
 const HEIGHTS = [0.5, 1, 1.5, 2, 3];
@@ -114,6 +116,20 @@ export default function MySubstation(props) {
             <div className="big-number"><span>Plan phase</span>
               <b style={{ color: phase?.color, fontSize: 20 }}>{phase?.label}</b><small>{phase?.when}</small></div>
             <button className="link-button" onClick={() => window.print()}><Printer size={15} /> Print site card</button>
+          </section>
+
+          <section className="week-actions">
+            <h2 className="section-title">Your action plan for this site</h2>
+            <div className="action-grid">
+              {assetThreats(p, row).map((th) => (
+                <ActionCard key={th} threat={th} compact
+                  headline={th === "flood" ? (row.flood_year ? `Water reaches the equipment around ${row.flood_year} (${surgeOf(surge).short})` : "Stays dry until 2150, but keep monitoring")
+                    : th === "salt" ? `Salt score ${row.salt_score} at ${p.dist_coast_km} km from the sea`
+                    : th === "heat" ? `Heat score ${row.heat_score}`
+                    : th === "sinking" ? `Ground sinking about ${p.subsidence_mm_yr} mm a year here`
+                    : th === "waves" ? `Only ${p.dist_coast_km} km from the shore` : undefined} />
+              ))}
+            </div>
           </section>
 
           <div className="two-col">

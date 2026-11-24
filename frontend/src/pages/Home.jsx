@@ -2,6 +2,9 @@ import { useMemo } from "react";
 import { MapContainer, TileLayer, CircleMarker, Tooltip } from "react-leaflet";
 import { ArrowRight, Waves, TrendingDown, ThermometerSun, AlarmClock, PlayCircle, CheckCircle2, Building2, Hospital, MapPinned } from "lucide-react";
 import DataNetwork from "../components/DataNetwork";
+import TrendCharts from "../components/TrendCharts";
+import ActionCard from "../components/ActionCard";
+import { SOLUTIONS } from "../lib/solutions";
 import { Panel } from "../components/ui";
 import { PHASES, ROLES, phaseOf, floodYearText, typeLabel } from "../lib/utils";
 
@@ -22,7 +25,19 @@ const HORIZONS = [
   { when: "2050 and beyond", page: "future", what: "Future Map + Safe Sites: where the grid must move, and where new solar + batteries should go." },
 ];
 
-export default function Home({ regions, regionInfo, priorities, assets, areaImpact, ocean, go, chooseRole, year, scenario, built }) {
+const COMPARE = [
+  ["Live wind, rain, temperature & wave maps", true, true],
+  ["Animated forecast timeline", true, true],
+  ["Sea-level rise 2030–2100 by emissions path", false, true],
+  ["Which substation floods, and in which year", false, true],
+  ["Neighbourhoods & hospitals affected", false, true],
+  ["What to do: action cards, shutdown order, checklist", false, true],
+  ["Ranked investment plan, budget & execution tracking", false, true],
+  ["Safe sites for new solar + battery", false, true],
+  ["Free, no sign-up", "varies", true],
+];
+
+export default function Home({ regions, region, regionInfo, priorities, assets, areaImpact, ocean, go, chooseRole, year, scenario, built }) {
   const city = regionInfo?.short || "Chennai";
   const types = useMemo(() => {
     const c = {};
@@ -74,10 +89,37 @@ export default function Home({ regions, regionInfo, priorities, assets, areaImpa
         </div>
       </Panel>
 
+      <Panel title={`The numbers for ${city}`} subtitle="From our model: how the picture changes decade by decade (strong-cyclone storm level)">
+        <TrendCharts region={region} surge={1.5} scenario={scenario} />
+      </Panel>
+
       {/* 3. SOLUTION */}
       <Panel title="2 · The solution: a digital twin that watches the coast" subtitle="Satellites, ocean networks, weather and grid data feed one model that turns them into decisions">
         <DataNetwork />
         <p className="chart-source">LIVE = working in this prototype today. PLANNED = connected when a state adopts it (agency data-sharing agreements).</p>
+      </Panel>
+
+      <section className="week-actions">
+        <h2 className="section-title">If you face this, do this</h2>
+        <p className="section-sub">The seven threats to a coastal grid, what each one does, and the practical fix. The app shows the right cards for every site and for this week's forecast.</p>
+        <div className="action-grid">
+          {Object.keys(SOLUTIONS).map((k) => <ActionCard key={k} threat={k} />)}
+        </div>
+      </section>
+
+      <Panel title="How this compares with weather & surf sites" subtitle="Sites such as Zoom Earth, Windy, surf-forecast.com and Buoyweather are excellent at showing the weather. CoastGrid Twin uses the same kind of forecast data, then tells you what it means for the grid and what to do.">
+        <div className="table-wrap">
+          <table className="data-table compare">
+            <thead><tr><th>Feature</th><th>Weather / surf sites</th><th>CoastGrid Twin</th></tr></thead>
+            <tbody>
+              {COMPARE.map(([f, a, b]) => (
+                <tr key={f}><td>{f}</td>
+                  <td className={a === true ? "yes" : a === false ? "no" : "mid"}>{a === true ? "✓" : a === false ? "✗" : "Varies (some lock longer forecasts behind a subscription)"}</td>
+                  <td className="yes">{b ? "✓" : "✗"}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </Panel>
 
       {/* 4. PLANNING */}
@@ -171,7 +213,7 @@ export default function Home({ regions, regionInfo, priorities, assets, areaImpa
         <Panel title="8 · Built to scale to any coastline" subtitle="Live in 3 Indian cities; the same pipeline onboards a new city from a configuration file">
           <div className="map-container" style={{ height: 260 }}>
             <MapContainer center={[5, 30]} zoom={1} scrollWheelZoom={false} style={{ height: "100%", width: "100%" }}>
-              <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              <TileLayer attribution="&copy; OpenStreetMap &copy; CARTO" url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
               {CANDIDATES.map((c) => (
                 <CircleMarker key={c.name} center={[c.lat, c.lon]} radius={5} pathOptions={{ color: "#fbbf24", fillColor: "#fbbf24", fillOpacity: 0.6 }}>
                   <Tooltip>{c.name}: candidate</Tooltip>

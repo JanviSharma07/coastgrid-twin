@@ -1,6 +1,7 @@
 import { Hospital, MapPinned, Landmark, Home as HomeIcon, Droplets } from "lucide-react";
-import AssetMap from "../components/AssetMap";
+import AssetMap, { TypeLegend } from "../components/AssetMap";
 import { InfoBox, Panel } from "../components/ui";
+import TrendCharts from "../components/TrendCharts";
 
 const PREPARE = [
   { icon: Landmark, who: "City corporation & ward offices",
@@ -20,12 +21,12 @@ const PREPARE = [
       "Never touch flooded electrical equipment; report it to the utility"] },
 ];
 
-export default function AreaPeople({ areaImpact, regionInfo, region, floodZones, assets, model, go, year, built }) {
+export default function AreaPeople({ areaImpact, regionInfo, region, floodZones, assets, model, go, year, built, surge, scenario }) {
   const a = areaImpact;
   const points = a ? [
-    ...a.flooded_places.map((p) => ({ ...p, color: "#38bdf8", stroke: "#fff", weight: 1.5, radius: 6, label: `Neighbourhood in flood water: ${p.name}` })),
-    ...a.hospitals_near_high_risk_substations.map((h) => ({ ...h, color: "#fbbf24", radius: 6, label: `Hospital near a high-risk substation: ${h.name}` })),
-    ...a.flooded_hospitals.map((h) => ({ ...h, color: "#f472b6", stroke: "#fff", weight: 2, radius: 7, label: `Hospital in flood water: ${h.name}` })),
+    ...a.flooded_places.map((p) => ({ ...p, icon: "place", label: `Neighbourhood in flood water: ${p.name}` })),
+    ...a.hospitals_near_high_risk_substations.map((h) => ({ ...h, icon: "hospital", color: "#fbbf24", label: `Hospital near a high-risk substation: ${h.name}` })),
+    ...a.flooded_hospitals.map((h) => ({ ...h, icon: "hospital", color: "#f472b6", label: `Hospital in flood water: ${h.name}` })),
   ] : [];
 
   return (
@@ -57,11 +58,11 @@ export default function AreaPeople({ areaImpact, regionInfo, region, floodZones,
             layers={{ assets: true, flood: true, safe: false, sinking: false }} layerKey={`area-${region}-${year}-${a?.scenario}-${a?.surge}`}
             center={regionInfo?.center} zoom={regionInfo?.zoom} height={460} legend={false} onSelect={(id) => go("asset", id)} />
           <div className="map-legend">
-            <span><i className="dot" style={{ background: "#38bdf8" }}></i> Neighbourhood in flood water</span>
-            <span><i className="dot" style={{ background: "#f472b6" }}></i> Hospital in flood water</span>
-            <span><i className="dot" style={{ background: "#fbbf24" }}></i> Hospital near high-risk substation</span>
+            <span><i className="gm-place mini">Name</i> Neighbourhood in flood water</span>
+            <span><i className="gm-hosp" style={{ "--f": "#f472b6" }}>+</i> Hospital in flood water</span>
+            <span><i className="gm-hosp" style={{ "--f": "#fbbf24" }}>+</i> Hospital near high-risk substation</span>
             <span><i className="swatch flood"></i> Flooded land</span>
-            <span className="legend-note">small dots = power assets by risk</span>
+            <TypeLegend />
           </div>
         </Panel>
 
@@ -82,6 +83,10 @@ export default function AreaPeople({ areaImpact, regionInfo, region, floodZones,
           </ul>
         </Panel>
       </div>
+
+      <Panel title="How exposure grows over the decades" subtitle="Same storm level as selected above">
+        <TrendCharts region={region} surge={surge} scenario={scenario} />
+      </Panel>
 
       <Panel title="What each group should prepare beforehand">
         <div className="card-grid four">

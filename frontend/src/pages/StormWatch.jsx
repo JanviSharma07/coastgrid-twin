@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import { CloudRain, Wind, Waves, Thermometer, ExternalLink, AlertTriangle, CheckCircle2, Play, Pause, Power } from "lucide-react";
-import AssetMap from "../components/AssetMap";
+import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import AssetMap, { TypeLegend } from "../components/AssetMap";
+import WeatherField from "../components/WeatherField";
+import ActionCard from "../components/ActionCard";
 import { InfoBox, Panel } from "../components/ui";
 import { getRisk, getFloodZones, getAreaImpact } from "../services/api";
-import { SURGES, storage } from "../lib/utils";
+import { SURGES, storage, TOOLTIP_STYLE } from "../lib/utils";
 
 // IMD 24-hour rainfall categories (mm)
 const IMD_RAIN = [
@@ -49,8 +52,11 @@ const CHECKLISTS = {
 
 const fmtDay = (d) => new Date(d + "T00:00:00").toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
 
-export default function StormWatch({ region, regionInfo, ocean, model, go, built }) {
+const HEAT_C = 37; // IMD heat-wave threshold for coastal stations (with departure criteria)
+
+export default function StormWatch({ region, regionInfo, ocean, model, go, built, assets, priorities }) {
   const [wx, setWx] = useState(null);
+  const [hourly, setHourly] = useState(null);
   const [sea, setSea] = useState(null);
   const [wxError, setWxError] = useState("");
   const [checked, setChecked] = useState(() => storage.get("cg-checklist", {}));
@@ -67,9 +73,10 @@ export default function StormWatch({ region, regionInfo, ocean, model, go, built
     const common = { timezone: "Asia/Kolkata", forecast_days: 7 };
     axios.get("https://api.open-meteo.com/v1/forecast", {
       params: { latitude: lat, longitude: lon, ...common,
-        daily: "temperature_2m_max,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max" },
+        daily: "temperature_2m_max,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max",
+        hourly: "wind_speed_10m,wind_gusts_10m,precipitation" },
       timeout: 15000,
-    }).then((r) => setWx(r.data.daily))
+    }).then((r) => { setWx(r.data.daily); setHourly(r.data.hourly || null); })
       .catch(() => setWxError("Live forecast could not be loaded right now (Open-Meteo unreachable). Please try again later."));
     const op = regionInfo?.ocean_point || [lat, lon];
     axios.get("https://marine-api.open-meteo.com/v1/marine", {
@@ -145,6 +152,31 @@ export default function StormWatch({ region, regionInfo, ocean, model, go, built
     });
   }, [wx, sea]);
   const alertDays = days.filter((d) => d.alerts.length);
+  const hourlyData = useMemo(() => {
+    if (!hourly?.time) return [];
+    const now = Date.now();
+    const start = Math.max(0, hourly.time.findIndex((x) => new Date(x).getTime() >= now) - 1);
+    return hourly.time.slice(start, start + 48).map((x, i) => ({
+      t: new Date(x).toLocaleString("en-IN", { weekday: "short", hour: "2-digit" }),
+      wind: hourly.wind_speed_10m[start + i], gust: hourly.wind_gusts_10m[start + i], rain: hourly.precipitation[start + i],
+    }));
+  }, [hourly]);
+  // Forecast-driven action cards
+  const lowSites = useMemo(() => priorities.filter((r) => r.type === "substation").slice().sort((a, b) => a.margin_m - b.margin_m).slice(0, 3).map((r) => r.name), [priorities]);
+  const coastSites = useMemo(() => assets.map((f) => f.properties).filter((p) => p.dist_coast_km <= 2).sort((a, b) => a.dist_coast_km - b.dist_coast_km).slice(0, 3).map((p) => p.name), [assets]);
+  const weekCards = useMemo(() => {
+    const out = [];
+    const first = (f) => days.find(f);
+    const r = first((d) => d.rain >= 64.5);
+    if (r) out.push({ threat: "rain", headline: `${fmtDay(r.date)}: ${r.rain} mm forecast (IMD "${r.cat.label}")`, sites: lowSites });
+    const g = first((d) => d.gust >= GALE_KMH);
+    if (g) out.push({ threat: "wind", headline: `${fmtDay(g.date)}: gusts up to ${Math.round(g.gust)} km/h` });
+    const w = first((d) => d.wave >= ROUGH_SEA_M);
+    if (w) out.push({ threat: "waves", headline: `${fmtDay(w.date)}: waves up to ${w.wave} m offshore`, sites: coastSites });
+    const h = first((d) => d.tmax >= HEAT_C);
+    if (h) out.push({ threat: "heat", headline: `${fmtDay(h.date)}: up to ${Math.round(h.tmax)}°C` });
+    return out;
+  }, [days, lowSites, coastSites]);
   const mhw = ocean?.marine_heatwave;
   const total = Object.values(CHECKLISTS).flat().length;
   const done = Object.values(checked).filter(Boolean).length;
@@ -157,6 +189,20 @@ export default function StormWatch({ region, regionInfo, ocean, model, go, built
         rain categories, and a replay of what today's sea plus a storm surge would do to the grid. That gives you a
         shutdown order and a checklist. Always follow official IMD and INCOIS warnings.
       </InfoBox>
+
+      <Panel title={`Live weather & sea around ${regionInfo?.short || "the city"}`} subtitle="Press play to move through the next 48 hours. Switch layers: wind, gusts, rain, temperature, waves">
+        <WeatherField regionInfo={regionInfo} assets={assets} priorities={priorities} />
+      </Panel>
+
+      <section className="week-actions">
+        <h2 className="section-title">{weekCards.length ? "This week: what you may face, and what to do" : "This week looks calm: stay ready"}</h2>
+        <div className="action-grid">
+          {(weekCards.length ? weekCards : [
+            { threat: "rain", headline: "No heavy rain in the 7-day forecast", sites: lowSites },
+            { threat: "flood", headline: "Cyclone season: keep barriers and pumps ready", sites: lowSites },
+          ]).map((c) => <ActionCard key={c.threat} {...c} />)}
+        </div>
+      </section>
 
       {alertDays.length > 0 ? (
         <div className="alert-banner">
@@ -185,8 +231,25 @@ export default function StormWatch({ region, regionInfo, ocean, model, go, built
             </div>
           ))}
         </div>
+        {hourlyData.length > 0 && (
+          <div style={{ width: "100%", height: 230, marginTop: 16 }}>
+            <ResponsiveContainer>
+              <ComposedChart data={hourlyData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+                <CartesianGrid stroke="#26374b" strokeDasharray="4 4" />
+                <XAxis dataKey="t" stroke="#8294a9" fontSize={10} interval={5} />
+                <YAxis yAxisId="w" stroke="#8294a9" fontSize={10} unit=" km/h" />
+                <YAxis yAxisId="r" orientation="right" stroke="#60a5fa" fontSize={10} unit=" mm" />
+                <Tooltip contentStyle={TOOLTIP_STYLE} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar yAxisId="r" dataKey="rain" name="Rain (mm/h)" fill="#3b82f6" radius={[3, 3, 0, 0]} />
+                <Line yAxisId="w" dataKey="wind" name="Wind (km/h)" stroke="#2dd4bf" dot={false} strokeWidth={2} />
+                <Line yAxisId="w" dataKey="gust" name="Gusts (km/h)" stroke="#f472b6" dot={false} strokeWidth={2} strokeDasharray="4 3" />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        )}
         <p className="chart-source">
-          Flags: heavy rain ≥ 64.5 mm/day (IMD), gusts ≥ {GALE_KMH} km/h (gale), waves ≥ {ROUGH_SEA_M} m (rough sea).
+          Chart: next 48 hours at the city centre. Flags: heavy rain ≥ 64.5 mm/day (IMD), gusts ≥ {GALE_KMH} km/h (gale), waves ≥ {ROUGH_SEA_M} m (rough sea).
           The replay below models sea water; flooding from rain is not modelled yet.
         </p>
       </Panel>
@@ -206,16 +269,18 @@ export default function StormWatch({ region, regionInfo, ocean, model, go, built
               ))}
             </div>
             <AssetMap mapKey={`storm-${region}`} assets={curAssets} floodZones={cur?.zones} model={model} assetColor={assetColor}
+              floodLayers={SURGES.slice(0, step + 1).map((s_) => ({ key: `fl-${region}-${s_.value}`, data: replay[s_.value]?.zones, opacity: 0.2 }))}
               layers={{ assets: true, flood: true, safe: false, sinking: false }} layerKey={`storm-${step}-${region}`}
               center={regionInfo?.center} zoom={regionInfo?.zoom} height={430} legend={false}
-              points={(cur?.area?.flooded_hospitals || []).map((h) => ({ ...h, color: "#f472b6", stroke: "#fff", weight: 2, radius: 6, label: `Hospital in flood water: ${h.name}` }))}
+              points={(cur?.area?.flooded_hospitals || []).map((h) => ({ ...h, icon: "hospital", color: "#f472b6", label: `Hospital in flood water: ${h.name}` }))}
               onSelect={(id) => go("asset", id)} />
             <div className="map-legend">
               <span><i className="dot high"></i> Water above equipment</span>
               <span><i className="dot medium"></i> Less than 0.5 m to spare</span>
               <span><i className="dot low"></i> Dry</span>
-              <span><i className="dot" style={{ background: "#f472b6" }}></i> Hospital in flood water</span>
-              <span><i className="swatch flood"></i> Flooded land</span>
+              <span><i className="gm-hosp" style={{ "--f": "#f472b6" }}>+</i> Hospital in flood water</span>
+              <span><i className="swatch flood"></i> Flooded land (darker = floods even in a smaller storm)</span>
+              <TypeLegend />
             </div>
           </Panel>
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from "recharts";
 import { Download, IndianRupee, Printer, Search } from "lucide-react";
 import { InfoBox, Panel, RiskBadge } from "../components/ui";
 import {
@@ -104,6 +104,34 @@ export default function InvestmentPlan({ priorities, region, regionInfo, scenari
           ))}
         </div>
       </Panel>
+
+      <div className="two-col">
+        <Panel title="Where the sites fall" subtitle="Share of all sites in each phase">
+          <div style={{ height: 240 }}>
+            <ResponsiveContainer>
+              <PieChart>
+                <Pie data={PHASES.map((ph) => ({ name: ph.label, value: byPhase[ph.id]?.length || 0, color: ph.color })).filter((d) => d.value)}
+                  dataKey="value" nameKey="name" innerRadius={55} outerRadius={95} paddingAngle={2} label={({ name, value }) => `${name}: ${value}`} labelLine={false} fontSize={11}>
+                  {PHASES.filter((ph) => byPhase[ph.id]?.length).map((ph) => <Cell key={ph.id} fill={ph.color} stroke="#0c202a" />)}
+                </Pie>
+                <Tooltip contentStyle={TOOLTIP_STYLE} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </Panel>
+        <Panel title="What kind of work is needed" subtitle="Number of sites per recommended action">
+          <div style={{ height: 240 }}>
+            <ResponsiveContainer>
+              <BarChart layout="vertical" data={ACTION_GROUPS.map((g) => ({ name: g.label, n: plan.groupCount[g.id] || 0 })).filter((d) => d.n)} margin={{ top: 5, right: 20, left: 10, bottom: 0 }}>
+                <XAxis type="number" stroke="#8294a9" fontSize={10} allowDecimals={false} />
+                <YAxis type="category" dataKey="name" stroke="#8294a9" fontSize={10} width={170} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} />
+                <Bar dataKey="n" name="sites" fill="#2dd4bf" radius={[0, 5, 5, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Panel>
+      </div>
 
       <div className="two-col">
         <Panel title="Budget: what does our money cover?" subtitle="Your numbers, in ₹ crore" right={<IndianRupee size={18} color="#2dd4bf" />}>

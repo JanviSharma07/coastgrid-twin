@@ -106,7 +106,9 @@ def health():
 
 @router.get("/meta", tags=["meta"])
 def meta():
-    return {"regions": [{k: R[k] for k in ("id", "name", "country", "center", "zoom", "bbox")} for R in REGIONS.values()],
+    return {"regions": [{**{k: R[k] for k in ("id", "name", "country", "center", "zoom", "bbox")},
+                         "subsidence": {"hotspots": R["subsidence_hotspots"], "peak_mm_yr": R["subsidence_peak_mm_yr"],
+                                        "radius_km": R["subsidence_radius_km"]}} for R in REGIONS.values()],
             "scenarios": SCENARIOS, "years": YEARS, "surge_levels": SURGE_LEVELS,
             "default": {"region": "chennai", "scenario": "ssp245", "year": 2050, "surge": DEFAULT_SURGE},
             "model": MODEL, "sources": SOURCES,

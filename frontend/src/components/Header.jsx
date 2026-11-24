@@ -1,36 +1,25 @@
-import { Search, Bell, CalendarDays } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 
-export default function Header() {
+export default function Header({ page, status, go }) {
+  const statusText = { ok: "Live data connected", waking: "Connecting to server…", down: "Server unreachable" }[status];
   return (
     <header className="header">
       <div>
-        <div className="breadcrumb">
-          CLIMATE INTELLIGENCE / OVERVIEW
-        </div>
-
-        <h1>Coastal Grid Overview</h1>
-
-        <p>
-          Monitor vulnerabilities. Predict risks.
-          Build resilient infrastructure.
-        </p>
+        <div className="breadcrumb">COASTGRID TWIN / {page.name.toUpperCase()}</div>
+        <h1>{page.title}</h1>
+        <p>{page.subtitle}</p>
       </div>
 
       <div className="header-actions">
-        <button className="icon-button">
-          <Search size={19} />
-        </button>
-
-        <button className="icon-button">
-          <Bell size={19} />
-        </button>
-
-        <button className="date-button">
-          <CalendarDays size={17} />
-          2026 Monitoring
-        </button>
-
-        <div className="profile">TV</div>
+        <span className={`status-pill ${status}`} title="Connection to the CoastGrid Twin data server">
+          <i></i> {statusText}
+        </span>
+        {page.id !== "start" && (
+          <button className="date-button" onClick={() => go("start")}>
+            <HelpCircle size={17} />
+            How to use
+          </button>
+        )}
       </div>
     </header>
   );

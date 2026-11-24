@@ -54,7 +54,7 @@ function useField(bbox) {
     const common = { latitude: pts.map((p) => p[0]).join(","), longitude: pts.map((p) => p[1]).join(","), timezone: "Asia/Kolkata", forecast_days: 2 };
     Promise.allSettled([
       axios.get("https://api.open-meteo.com/v1/forecast", { params: { ...common, hourly: "wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m,precipitation" }, timeout: 20000 }),
-      axios.get("https://marine-api.open-meteo.com/v1/marine", { params: { ...common, hourly: "wave_height" }, timeout: 20000 }),
+      axios.get("https://marine-api.open-meteo.com/v1/marine", { params: { ...common, hourly: "wave_height,wave_direction" }, timeout: 20000 }),
     ]).then(([wx, sea]) => {
       if (wx.status !== "fulfilled") return setError("Live weather could not be loaded right now (Open-Meteo unreachable).");
       const arr = Array.isArray(wx.value.data) ? wx.value.data : [wx.value.data];
@@ -62,7 +62,7 @@ function useField(bbox) {
       const times = arr[0].hourly.time;
       const grab = (key, src = arr) => times.map((_, t) => src.map((loc) => loc?.hourly?.[key]?.[t] ?? null));
       setData({ lats, lons, times, wind: grab("wind_speed_10m"), dir: grab("wind_direction_10m"), gust: grab("wind_gusts_10m"),
-        temp: grab("temperature_2m"), rain: grab("precipitation"), wave: seaArr.length ? grab("wave_height", seaArr) : null });
+        temp: grab("temperature_2m"), rain: grab("precipitation"), wave: seaArr.length ? grab("wave_height", seaArr) : null, wdir: seaArr.length ? grab("wave_direction", seaArr) : null });
     });
   }, [bbox]);
   return { data, error };
@@ -126,6 +126,59 @@ function FieldCanvas({ data, t, layer }) {
       const L_ = LAYERS.find((x) => x.id === ly);
       const grid = d[ly]?.[ti];
       if (!grid) return;
+      if (ly === "wave") {
+        // Waves exist only at sea: draw a soft colour blob + height + direction arrow at each sea point
+        const dirs = d.wdir?.[ti];
+        const p0 = map.latLngToContainerPoint([d.lats[0], d.lons[0]]);
+        const p1 = map.latLngToContainerPoint([d.lats[1], d.lons[1]]);
+        const cell = Math.max(Math.abs(p1.x - p0.x), Math.abs(p1.y - p0.y));
+        for (let i = 0; i < N; i++) {
+          for (let j = 0; j < N; j++) {
+            const v = grid[i * N + j];
+            if (v === null || v === undefined) continue;
+            const pt = map.latLngToContainerPoint([d.lats[i], d.lons[j]]);
+            const col = colorAt("wave", v);
+            const g = ctx.createRadialGradient(pt.x, pt.y, 0, pt.x, pt.y, cell * 0.85);
+            g.addColorStop(0, `rgba(${col[0] | 0},${col[1] | 0},${col[2] | 0},0.75)`);
+            g.addColorStop(1, `rgba(${col[0] | 0},${col[1] | 0},${col[2] | 0},0)`);
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            ctx.arc(pt.x, pt.y, cell * 0.85, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+        ctx.font = "bold 12px DM Sans, sans-serif";
+        ctx.textAlign = "center";
+        for (let i = 0; i < N; i++) {
+          for (let j = 0; j < N; j++) {
+            const v = grid[i * N + j];
+            if (v === null || v === undefined) continue;
+            const pt = map.latLngToContainerPoint([d.lats[i], d.lons[j]]);
+            if (pt.x < -20 || pt.y < -20 || pt.x > c.width + 20 || pt.y > c.height + 20) continue;
+            const dir = dirs?.[i * N + j];
+            if (dir !== null && dir !== undefined) {
+              const r = ((dir + 180) * Math.PI) / 180; // waves come FROM dir
+              ctx.strokeStyle = "rgba(255,255,255,0.9)";
+              ctx.lineWidth = 2;
+              const ax = pt.x + Math.sin(r) * 14, ay = pt.y - Math.cos(r) * 14;
+              ctx.beginPath();
+              ctx.moveTo(pt.x - Math.sin(r) * 6, pt.y + Math.cos(r) * 6);
+              ctx.lineTo(ax, ay);
+              ctx.lineTo(ax - Math.sin(r - 0.5) * 6, ay + Math.cos(r - 0.5) * 6);
+              ctx.moveTo(ax, ay);
+              ctx.lineTo(ax - Math.sin(r + 0.5) * 6, ay + Math.cos(r + 0.5) * 6);
+              ctx.stroke();
+            }
+            ctx.fillStyle = "rgba(10,20,35,0.85)";
+            ctx.beginPath();
+            ctx.arc(pt.x, pt.y + 20, 13, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "#fff";
+            ctx.fillText(v.toFixed(1), pt.x, pt.y + 24);
+          }
+        }
+        return;
+      }
       const B = 6;
       for (let y = 0; y < c.height; y += B) {
         for (let x = 0; x < c.width; x += B) {
@@ -235,6 +288,7 @@ export default function WeatherField({ regionInfo, assets = [] }) {
   }, [regionInfo]);
   const valueAt = (p) => {
     if (!data || !data[layer]) return "–";
+    if (layer === "wave" && p.name !== "Out at sea") return "on land";
     const v = sample(data[layer][t], data.lats, data.lons, p.lat, p.lon);
     if (v === null) return "–";
     return `${layer === "wave" || layer === "rain" ? v.toFixed(1) : Math.round(v)} ${SCALES[L_.scale].unit}`;
@@ -273,7 +327,7 @@ export default function WeatherField({ regionInfo, assets = [] }) {
         <input type="range" min={0} max={data ? data.times.length - 1 : 0} value={t} onChange={(e) => { setPlaying(false); setT(Number(e.target.value)); }} aria-label="Forecast hour" />
         <b>{when}</b>
       </div>
-      <p className="chart-source">Live forecast from Open-Meteo (free), a {N}×{N} grid of points, hourly for 48 h. Moving streaks show wind direction and speed. Shapes = our medium- and high-risk power assets.</p>
+      <p className="chart-source">Live forecast from Open-Meteo (free), a {N}×{N} grid of points, hourly for 48 h. Moving streaks show wind direction and speed; on Waves, numbers are wave height in metres and arrows show the direction waves travel. Shapes = our medium- and high-risk power assets.</p>
     </div>
   );
 }

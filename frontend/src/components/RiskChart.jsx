@@ -1,110 +1,72 @@
 import {
-  AreaChart,
-  Area,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer
+  ResponsiveContainer,
+  ReferenceLine,
 } from "recharts";
 
-const data = [
-  { year: "2030", low: 12, medium: 18, high: 25 },
-  { year: "2040", low: 16, medium: 28, high: 40 },
-  { year: "2050", low: 20, medium: 39, high: 58 },
-  { year: "2060", low: 25, medium: 48, high: 70 },
-  { year: "2070", low: 30, medium: 57, high: 82 },
-  { year: "2080", low: 35, medium: 67, high: 92 },
-  { year: "2090", low: 39, medium: 75, high: 100 },
-  { year: "2100", low: 43, medium: 83, high: 110 }
+const SERIES = [
+  { key: "ssp585", label: "High emissions (SSP5-8.5)", color: "#fb7185" },
+  { key: "ssp245", label: "Intermediate (SSP2-4.5)", color: "#38bdf8" },
+  { key: "ssp126", label: "Low emissions (SSP1-2.6)", color: "#34d399" },
 ];
 
-export default function RiskChart() {
+// seaLevel: /api/sea-level response -> { series: { ssp126: [{year, p17, p50, p83}], ... }, source }
+export default function RiskChart({ seaLevel, year, scenario }) {
+  const s = seaLevel?.series || {};
+  const years = (s.ssp245 || []).map((r) => r.year);
+  const data = years.map((y, i) => {
+    const row = { year: y };
+    SERIES.forEach(({ key }) => {
+      row[key] = s[key]?.[i]?.p50;
+    });
+    return row;
+  });
+
+  if (!data.length) {
+    return <p className="empty-message">Sea-level data will appear when available.</p>;
+  }
+
   return (
-    <div className="panel chart-panel">
-      <div className="panel-heading">
-        <div>
-          <h3>Climate Risk Projection</h3>
-          <p>Illustrative scenario comparison</p>
-        </div>
-
-        <span className="live-tag">PROJECTION</span>
-      </div>
-
-      <div style={{ width: "100%", height: 280 }}>
+    <>
+      <div style={{ width: "100%", height: 300 }}>
         <ResponsiveContainer>
-          <AreaChart data={data}>
-            <defs>
-              <linearGradient
-                id="highGradient"
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="1"
-              >
-                <stop
-                  offset="0%"
-                  stopColor="#fb7185"
-                  stopOpacity={0.4}
-                />
-
-                <stop
-                  offset="100%"
-                  stopColor="#fb7185"
-                  stopOpacity={0}
-                />
-              </linearGradient>
-            </defs>
-
-            <CartesianGrid
-              stroke="#26374b"
-              strokeDasharray="4 4"
-            />
-
+          <LineChart data={data} margin={{ top: 24, right: 12, left: -10, bottom: 0 }}>
+            <CartesianGrid stroke="#26374b" strokeDasharray="4 4" />
             <XAxis dataKey="year" stroke="#8294a9" />
-            <YAxis stroke="#8294a9" />
-
+            <YAxis stroke="#8294a9" unit=" m" />
             <Tooltip
-              contentStyle={{
-                background: "#101e30",
-                border: "1px solid #30445c",
-                borderRadius: "10px",
-                color: "#fff"
-              }}
+              formatter={(v, name) => [`${v} m`, SERIES.find((x) => x.key === name)?.label || name]}
+              contentStyle={{ background: "#101e30", border: "1px solid #30445c", borderRadius: "10px", color: "#fff" }}
             />
-
-            <Area
-              type="monotone"
-              dataKey="high"
-              stroke="#fb7185"
-              fill="url(#highGradient)"
-              strokeWidth={3}
-            />
-
-            <Area
-              type="monotone"
-              dataKey="medium"
-              stroke="#38bdf8"
-              fill="transparent"
-              strokeWidth={2}
-            />
-
-            <Area
-              type="monotone"
-              dataKey="low"
-              stroke="#34d399"
-              fill="transparent"
-              strokeWidth={2}
-            />
-          </AreaChart>
+            <ReferenceLine x={year} stroke="#2dd4bf" strokeDasharray="3 3" label={{ value: String(year), fill: "#2dd4bf", position: "top" }} />
+            {SERIES.map(({ key, color }) => (
+              <Line
+                key={key}
+                type="monotone"
+                dataKey={key}
+                stroke={color}
+                strokeWidth={key === scenario ? 3.5 : 1.5}
+                strokeOpacity={key === scenario ? 1 : 0.55}
+                dot={false}
+              />
+            ))}
+          </LineChart>
         </ResponsiveContainer>
       </div>
 
       <div className="chart-legend">
-        <span><i className="high"></i> SSP585</span>
-        <span><i className="medium"></i> SSP245</span>
-        <span><i className="low"></i> SSP126</span>
+        {SERIES.map(({ key, label, color }) => (
+          <span key={key}><i className="dot" style={{ background: color }}></i> {label}</span>
+        ))}
       </div>
-    </div>
+      <p className="chart-source">
+        Median projected rise in metres (relative to 1995–2014). Source: {seaLevel?.source}
+      </p>
+    </>
   );
 }

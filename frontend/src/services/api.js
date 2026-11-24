@@ -1,8 +1,9 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://127.0.0.1:8000",
-  timeout: 15000,
+  // Live backend by default; set VITE_API_URL (e.g. http://127.0.0.1:8000) to use a local one
+  baseURL: import.meta.env.VITE_API_URL || "https://coastgrid-twin-api.vercel.app",
+  timeout: 30000, // first request after idle can take a few seconds
 });
 
 export const getMeta = () => API.get("/api/meta");

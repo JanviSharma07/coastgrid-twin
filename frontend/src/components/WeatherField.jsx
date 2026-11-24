@@ -93,20 +93,30 @@ function FieldCanvas({ data, t, layer }) {
   state.current = { data, t, layer };
 
   useEffect(() => {
-    const container = map.getContainer();
-    const mk = (z) => {
+    // Our own map pane between the tiles (200) and the markers (600), so the weather sits ON the map
+    const pane = map.getPane("wx") || map.createPane("wx");
+    pane.style.zIndex = 450;
+    pane.style.pointerEvents = "none";
+    const mk = () => {
       const c = document.createElement("canvas");
-      Object.assign(c.style, { position: "absolute", inset: "0", pointerEvents: "none", zIndex: z });
-      container.appendChild(c);
+      Object.assign(c.style, { position: "absolute", left: "0", top: "0", pointerEvents: "none" });
+      pane.appendChild(c);
       return c;
     };
-    fieldRef.current = mk(350);
-    partRef.current = mk(360);
+    fieldRef.current = mk();
+    partRef.current = mk();
     const size = () => {
       const { x, y } = map.getSize();
-      [fieldRef.current, partRef.current].forEach((c) => { c.width = x; c.height = y; });
+      const origin = map.containerPointToLayerPoint([0, 0]);
+      [fieldRef.current, partRef.current].forEach((c) => {
+        c.width = x;
+        c.height = y;
+        L.DomUtil.setPosition(c, origin);
+        c.style.opacity = 1;
+      });
       drawField();
     };
+    const hide = () => [fieldRef.current, partRef.current].forEach((c) => (c.style.opacity = 0));
     function drawField() {
       const { data: d, t: ti, layer: ly } = state.current;
       const c = fieldRef.current;
@@ -133,6 +143,7 @@ function FieldCanvas({ data, t, layer }) {
     redrawRef.current = drawField;
     size();
     map.on("moveend zoomend resize", size);
+    map.on("zoomstart", hide);
 
     // particles
     let parts = [];
@@ -179,13 +190,19 @@ function FieldCanvas({ data, t, layer }) {
     return () => {
       cancelAnimationFrame(raf);
       map.off("moveend zoomend resize", size);
+      map.off("zoomstart", hide);
       fieldRef.current?.remove();
       partRef.current?.remove();
     };
   }, [map]);
 
   useEffect(() => {
-    if (data) map.fitBounds([[data.lats[N - 1], data.lons[0]], [data.lats[0], data.lons[N - 1]]]);
+    if (!data) return;
+    const id = setTimeout(() => {
+      map.invalidateSize();
+      map.fitBounds([[data.lats[N - 1], data.lons[0]], [data.lats[0], data.lons[N - 1]]], { animate: false });
+    }, 60);
+    return () => clearTimeout(id);
   }, [data, map]);
 
   useEffect(() => {

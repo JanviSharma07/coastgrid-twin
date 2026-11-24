@@ -23,6 +23,12 @@ def _make_engine():
     kwargs = {"pool_pre_ping": True}
     if url.startswith("sqlite"):
         kwargs["connect_args"] = {"check_same_thread": False}
+    else:
+        # Serverless (Vercel): don't hold idle connections, so the free Supabase pooler isn't exhausted.
+        # prepare_threshold=None also makes it work with Supabase's transaction pooler (port 6543).
+        from sqlalchemy.pool import NullPool
+        kwargs["poolclass"] = NullPool
+        kwargs["connect_args"] = {"prepare_threshold": None}
     return create_engine(url, **kwargs)
 
 

@@ -105,7 +105,12 @@ def build(region_id: str) -> dict:
                               "lat": round(pt[0], 5), "lon": round(pt[1], 5)})
     hospitals = np.array([[h["lat"], h["lon"]] for h in hosp_list] or [[0.0, 0.0]])
     places = []
-    for el in S.fetch_places(bbox, cache):
+    try:
+        place_els = S.fetch_places(bbox, cache)
+    except Exception as e:  # optional layer: public Overpass servers are sometimes busy
+        log.warning("Neighbourhood names unavailable (%s); continuing without them", e)
+        place_els = []
+    for el in place_els:
         t = el.get("tags", {})
         name = t.get("name:en") or t.get("name")
         if name and "lat" in el and not any(p_["name"] == name for p_ in places):

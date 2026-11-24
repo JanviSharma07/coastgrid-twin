@@ -72,13 +72,13 @@ def _get_json(client: httpx.Client, url: str, params=None, tries: int = 5):
 # ---------------------------------------------------------------------------
 # OpenStreetMap (Overpass)
 # ---------------------------------------------------------------------------
-def overpass(query: str, cache: Cache, name: str) -> dict:
+def overpass(query: str, cache: Cache, name: str, tries: int = 3, timeout: float = 180) -> dict:
     if (hit := cache.get(name)) is not None:
         return hit
     last_err = None
-    with _client() as c:
+    with httpx.Client(timeout=timeout, headers={"User-Agent": settings.user_agent}, follow_redirects=True) as c:
         for url in OVERPASS_URLS:
-            for attempt in range(3):
+            for attempt in range(tries):
                 try:
                     log.info("Overpass: %s (%s)", name, url)
                     r = c.post(url, data={"data": query})
@@ -121,7 +121,7 @@ def fetch_places(bbox: list[float], cache: Cache) -> list[dict]:
     q = f"""[out:json][timeout:120];
 node["place"~"^(suburb|neighbourhood|quarter|village|town)$"]["name"]({s},{w},{n},{e});
 out body;"""
-    return overpass(q, cache, "osm_places")["elements"]
+    return overpass(q, cache, "osm_places", tries=1, timeout=90)["elements"]
 
 
 def fetch_coastline(bbox: list[float], cache: Cache) -> list[list[list[float]]]:

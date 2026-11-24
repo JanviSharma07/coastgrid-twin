@@ -162,9 +162,13 @@ function App() {
 
         <div className="dashboard-content">
           {!built && (
-            <div className="onboarding-banner">
-              <b>{regionInfo?.name} is being onboarded.</b> Its data has not been built yet, so the screens are empty.
-              The same pipeline that built Chennai runs for it with one command (see Evidence & Data → Add a city).
+            <div className="onboarding-banner big">
+              <div>
+                <b>{regionInfo?.name} is being onboarded: its data has not been built yet.</b>
+                <p>Maps, stations and plans for this city appear after its data run (one command, see Evidence & Data → Add a city).
+                  The live weather on Storm Watch already works for every city.</p>
+              </div>
+              <button className="primary-button inline" onClick={() => setRegion("chennai")}>Switch to Chennai (live)</button>
             </div>
           )}
           {regionInfo?.notes?.length > 0 && built && (
@@ -181,7 +185,16 @@ function App() {
           {error && <div className="error-banner">{error}</div>}
           {loading && controls && built && <div className="loading-message">Loading data for this future…</div>}
 
-          {pages[active]}
+          {!built && ["future", "area", "asset", "plan", "safe"].includes(active) ? (
+            <div className="empty-city">
+              <h2>No data for {regionInfo?.short} yet</h2>
+              <p>This screen needs the city's data run. Switch to Chennai to see it working, or open Storm Watch for {regionInfo?.short}'s live weather.</p>
+              <div className="btn-row">
+                <button className="primary-button inline" onClick={() => setRegion("chennai")}>Switch to Chennai</button>
+                <button className="link-button" onClick={() => go("storm")}>Storm Watch for {regionInfo?.short}</button>
+              </div>
+            </div>
+          ) : pages[active]}
 
           <footer className="dashboard-footer">
             <span>COASTGRID TWIN</span>

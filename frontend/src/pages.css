@@ -536,3 +536,9 @@ a { color: var(--primary-light); }
 .playbook { border: 1px solid var(--border); border-radius: 14px; padding: 14px 18px; background: rgba(255,255,255,0.02); }
 .playbook summary { cursor: pointer; font-weight: 700; color: var(--primary-light); font-size: 14px; }
 .playbook[open] summary { margin-bottom: 14px; }
+.onboarding-banner.big { display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.onboarding-banner.big p { margin: 4px 0 0; color: #b5d8ea; }
+.empty-city { padding: 40px; text-align: center; border-radius: 16px; border: 1px dashed rgba(56,189,248,0.4); background: rgba(56,189,248,0.04); }
+.empty-city h2 { font-family: 'Space Grotesk', sans-serif; margin: 0 0 8px; }
+.empty-city p { color: #b9cfd4; max-width: 640px; margin: 0 auto 10px; }
+.empty-city .btn-row { justify-content: center; }

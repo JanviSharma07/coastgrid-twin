@@ -35,7 +35,7 @@ const LAYERS = [
   { id: "wave", label: "Waves", icon: Waves, scale: "wave", particles: false },
 ];
 
-const N = 12; // grid points per side
+const N = 14; // grid points per side
 
 /* ---------- data: one Open-Meteo request for a 9x9 grid, hourly for 48 h ---------- */
 function useField(bbox) {
@@ -46,7 +46,7 @@ function useField(bbox) {
     setData(null);
     setError("");
     const [s, w, n, e] = bbox;
-    const padLat = 1.4, padLon = 3.2; // wide box to match the map shape
+    const padLat = 3.2, padLon = 5; // big box so the whole visible map is covered
     const lats = [], lons = [];
     for (let i = 0; i < N; i++) lats.push(+(n + padLat - (i * (n - s + 2 * padLat)) / (N - 1)).toFixed(3));
     for (let j = 0; j < N; j++) lons.push(+(w - padLon + (j * (e - w + 2 * padLon)) / (N - 1)).toFixed(3));
@@ -70,9 +70,9 @@ function useField(bbox) {
 
 // bilinear sample of a flat N*N array at lat/lon
 function sample(field, lats, lons, lat, lon) {
-  const fi = ((lats[0] - lat) / (lats[0] - lats[N - 1])) * (N - 1);
-  const fj = ((lon - lons[0]) / (lons[N - 1] - lons[0])) * (N - 1);
-  if (fi < 0 || fj < 0 || fi > N - 1 || fj > N - 1) return null;
+  // outside the fetched box, use the nearest edge value so the whole view stays coloured
+  const fi = Math.min(Math.max(((lats[0] - lat) / (lats[0] - lats[N - 1])) * (N - 1), 0), N - 1);
+  const fj = Math.min(Math.max(((lon - lons[0]) / (lons[N - 1] - lons[0])) * (N - 1), 0), N - 1);
   const i = Math.min(Math.floor(fi), N - 2), j = Math.min(Math.floor(fj), N - 2);
   const di = fi - i, dj = fj - j;
   const v = [field[i * N + j], field[i * N + j + 1], field[(i + 1) * N + j], field[(i + 1) * N + j + 1]];
@@ -197,15 +197,6 @@ function FieldCanvas({ data, t, layer }) {
   }, [map]);
 
   useEffect(() => {
-    if (!data) return;
-    const id = setTimeout(() => {
-      map.invalidateSize();
-      map.fitBounds([[data.lats[N - 1], data.lons[0]], [data.lats[0], data.lons[N - 1]]], { animate: false });
-    }, 60);
-    return () => clearTimeout(id);
-  }, [data, map]);
-
-  useEffect(() => {
     redrawRef.current?.();
     const c = partRef.current;
     if (c) c.getContext("2d").clearRect(0, 0, c.width, c.height);
@@ -260,7 +251,7 @@ export default function WeatherField({ regionInfo, assets = [] }) {
         })}
       </div>
       <div className="wx-map">
-        <MapContainer key={regionInfo?.id} center={regionInfo?.center || [13.05, 80.24]} zoom={(regionInfo?.zoom || 11) - 2} zoomSnap={0.25} scrollWheelZoom style={{ height: "100%", width: "100%" }}>
+        <MapContainer key={regionInfo?.id} center={regionInfo?.center || [13.05, 80.24]} zoom={(regionInfo?.zoom || 11) - 2.5} zoomSnap={0.25} scrollWheelZoom style={{ height: "100%", width: "100%" }}>
           <TileLayer className="dark-tiles" attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <FieldCanvas data={data} t={t} layer={layer} />
           {assets.map((f) => (

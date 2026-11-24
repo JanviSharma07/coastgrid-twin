@@ -58,10 +58,7 @@ export default function AssetMap({
     <>
       <div className="map-container" style={{ height }}>
         <MapContainer key={mapKey} center={center} zoom={zoom} scrollWheelZoom style={{ height: "100%", width: "100%" }}>
-          <TileLayer
-            attribution='&copy; OpenStreetMap contributors &copy; CARTO'
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-          />
+          <TileLayer className="dark-tiles" attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <FlyTo focus={focus} />
 
           {flood && layers.flood && floodLayers?.map((fl) => fl.data?.features?.length > 0 && (

@@ -530,3 +530,9 @@ a { color: var(--primary-light); }
   .wx-time b { min-width: 0; font-size: 12px; }
   .action-grid { grid-template-columns: 1fr; }
 }
+.dark-tiles { filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.6); }
+.threat-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.threat-chips span { padding: 8px 14px; border-radius: 999px; font-size: 13px; font-weight: 700; color: #fff; background: color-mix(in srgb, var(--c) 22%, transparent); border: 1px solid color-mix(in srgb, var(--c) 55%, transparent); }
+.playbook { border: 1px solid var(--border); border-radius: 14px; padding: 14px 18px; background: rgba(255,255,255,0.02); }
+.playbook summary { cursor: pointer; font-weight: 700; color: var(--primary-light); font-size: 14px; }
+.playbook[open] summary { margin-bottom: 14px; }

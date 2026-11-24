@@ -3,7 +3,6 @@ import { MapContainer, TileLayer, CircleMarker, Tooltip } from "react-leaflet";
 import { ArrowRight, Waves, TrendingDown, ThermometerSun, AlarmClock, PlayCircle, CheckCircle2, Building2, Hospital, MapPinned } from "lucide-react";
 import DataNetwork from "../components/DataNetwork";
 import TrendCharts from "../components/TrendCharts";
-import ActionCard from "../components/ActionCard";
 import { SOLUTIONS } from "../lib/solutions";
 import { Panel } from "../components/ui";
 import { PHASES, ROLES, phaseOf, floodYearText, typeLabel } from "../lib/utils";
@@ -99,13 +98,12 @@ export default function Home({ regions, region, regionInfo, priorities, assets, 
         <p className="chart-source">LIVE = working in this prototype today. PLANNED = connected when a state adopts it (agency data-sharing agreements).</p>
       </Panel>
 
-      <section className="week-actions">
-        <h2 className="section-title">If you face this, do this</h2>
-        <p className="section-sub">The seven threats to a coastal grid, what each one does, and the practical fix. The app shows the right cards for every site and for this week's forecast.</p>
-        <div className="action-grid">
-          {Object.keys(SOLUTIONS).map((k) => <ActionCard key={k} threat={k} />)}
+      <Panel title="Seven threats, one playbook" subtitle="When the forecast or the model flags a threat, the matching “you may face → do this” card appears where it's needed: in Storm Watch for this week, and in My Substation for each site."
+        right={<button className="link-button" onClick={() => go("storm")}>See this week's alerts <ArrowRight size={14} /></button>}>
+        <div className="threat-chips">
+          {Object.entries(SOLUTIONS).map(([k, v]) => <span key={k} style={{ "--c": v.color }}>{v.title}</span>)}
         </div>
-      </section>
+      </Panel>
 
       <Panel title="How this compares with weather & surf sites" subtitle="Sites such as Zoom Earth, Windy, surf-forecast.com and Buoyweather are excellent at showing the weather. CoastGrid Twin uses the same kind of forecast data, then tells you what it means for the grid and what to do.">
         <div className="table-wrap">
@@ -213,7 +211,7 @@ export default function Home({ regions, region, regionInfo, priorities, assets, 
         <Panel title="8 · Built to scale to any coastline" subtitle="Live in 3 Indian cities; the same pipeline onboards a new city from a configuration file">
           <div className="map-container" style={{ height: 260 }}>
             <MapContainer center={[5, 30]} zoom={1} scrollWheelZoom={false} style={{ height: "100%", width: "100%" }}>
-              <TileLayer attribution="&copy; OpenStreetMap &copy; CARTO" url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+              <TileLayer className="dark-tiles" attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
               {CANDIDATES.map((c) => (
                 <CircleMarker key={c.name} center={[c.lat, c.lon]} radius={5} pathOptions={{ color: "#fbbf24", fillColor: "#fbbf24", fillOpacity: 0.6 }}>
                   <Tooltip>{c.name}: candidate</Tooltip>

@@ -5,6 +5,7 @@ import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Respons
 import AssetMap, { TypeLegend } from "../components/AssetMap";
 import WeatherField from "../components/WeatherField";
 import ActionCard from "../components/ActionCard";
+import { SOLUTIONS } from "../lib/solutions";
 import { InfoBox, Panel } from "../components/ui";
 import { getRisk, getFloodZones, getAreaImpact } from "../services/api";
 import { SURGES, storage, TOOLTIP_STYLE } from "../lib/utils";
@@ -195,12 +196,11 @@ export default function StormWatch({ region, regionInfo, ocean, model, go, built
       </Panel>
 
       <section className="week-actions">
-        <h2 className="section-title">{weekCards.length ? "This week: what you may face, and what to do" : "This week looks calm: stay ready"}</h2>
+        <h2 className="section-title">{weekCards.length ? "Alerts this week: what you may face, and what to do" : "No alerts this week"}</h2>
         <div className="action-grid">
-          {(weekCards.length ? weekCards : [
-            { threat: "rain", headline: "No heavy rain in the 7-day forecast", sites: lowSites },
-            { threat: "flood", headline: "Cyclone season: keep barriers and pumps ready", sites: lowSites },
-          ]).map((c) => <ActionCard key={c.threat} {...c} />)}
+          {weekCards.length ? weekCards.map((c) => <ActionCard key={c.threat} {...c} />) : (
+            <div className="ok-banner"><CheckCircle2 size={18} /> No heavy rain, gale-force gusts, rough sea or coastal heat-wave levels forecast this week. Alert cards appear here automatically when the forecast changes.</div>
+          )}
         </div>
       </section>
 
@@ -343,6 +343,12 @@ export default function StormWatch({ region, regionInfo, ocean, model, go, built
           ))}
         </div>
       </Panel>
+      <details className="playbook">
+        <summary>Full threat playbook: all seven “you may face → do this” cards for training and reference</summary>
+        <div className="action-grid">
+          {Object.keys(SOLUTIONS).map((k) => <ActionCard key={k} threat={k} compact />)}
+        </div>
+      </details>
     </div>
   );
 }

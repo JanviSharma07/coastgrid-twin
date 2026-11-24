@@ -8,8 +8,8 @@ import { typeIcon } from "./markers";
 
 /* ---------- colour scales (stops: value -> rgb) ---------- */
 const SCALES = {
-  wind: { unit: "km/h", stops: [[0, [62, 50, 140]], [10, [58, 110, 190]], [20, [40, 170, 190]], [35, [90, 200, 120]], [50, [230, 210, 70]], [65, [245, 140, 50]], [85, [220, 50, 60]], [120, [180, 40, 150]]] },
-  gust: { unit: "km/h", stops: [[0, [62, 50, 140]], [15, [58, 110, 190]], [30, [40, 170, 190]], [50, [90, 200, 120]], [70, [230, 210, 70]], [90, [245, 140, 50]], [120, [220, 50, 60]], [160, [180, 40, 150]]] },
+  wind: { unit: "km/h", stops: [[0, [95, 70, 210]], [8, [70, 120, 240]], [16, [40, 190, 220]], [35, [90, 200, 120]], [50, [230, 210, 70]], [65, [245, 140, 50]], [85, [220, 50, 60]], [120, [180, 40, 150]]] },
+  gust: { unit: "km/h", stops: [[0, [95, 70, 210]], [12, [70, 120, 240]], [25, [40, 190, 220]], [50, [90, 200, 120]], [70, [230, 210, 70]], [90, [245, 140, 50]], [120, [220, 50, 60]], [160, [180, 40, 150]]] },
   temp: { unit: "°C", stops: [[10, [60, 90, 200]], [18, [60, 180, 200]], [24, [120, 200, 110]], [28, [230, 200, 80]], [32, [240, 140, 50]], [36, [220, 60, 50]], [42, [150, 20, 60]]] },
   rain: { unit: "mm/h", stops: [[0, [0, 0, 0, 0]], [0.2, [90, 160, 230]], [1, [50, 110, 220]], [3, [60, 200, 120]], [7, [240, 210, 60]], [15, [240, 120, 40]], [30, [210, 40, 80]]] },
   wave: { unit: "m", stops: [[0, [40, 60, 150]], [0.5, [50, 120, 200]], [1, [40, 180, 190]], [1.5, [100, 210, 120]], [2.5, [240, 200, 60]], [3.5, [240, 120, 40]], [5, [200, 40, 90]]] },
@@ -35,7 +35,7 @@ const LAYERS = [
   { id: "wave", label: "Waves", icon: Waves, scale: "wave", particles: false },
 ];
 
-const N = 11; // grid points per side
+const N = 12; // grid points per side
 
 /* ---------- data: one Open-Meteo request for a 9x9 grid, hourly for 48 h ---------- */
 function useField(bbox) {
@@ -46,10 +46,10 @@ function useField(bbox) {
     setData(null);
     setError("");
     const [s, w, n, e] = bbox;
-    const pad = 1.4;
+    const padLat = 1.4, padLon = 3.2; // wide box to match the map shape
     const lats = [], lons = [];
-    for (let i = 0; i < N; i++) lats.push(+(n + pad - (i * (n - s + 2 * pad)) / (N - 1)).toFixed(3));
-    for (let j = 0; j < N; j++) lons.push(+(w - pad + (j * (e - w + 2 * pad)) / (N - 1)).toFixed(3));
+    for (let i = 0; i < N; i++) lats.push(+(n + padLat - (i * (n - s + 2 * padLat)) / (N - 1)).toFixed(3));
+    for (let j = 0; j < N; j++) lons.push(+(w - padLon + (j * (e - w + 2 * padLon)) / (N - 1)).toFixed(3));
     const pts = lats.flatMap((la) => lons.map((lo) => [la, lo]));
     const common = { latitude: pts.map((p) => p[0]).join(","), longitude: pts.map((p) => p[1]).join(","), timezone: "Asia/Kolkata", forecast_days: 2 };
     Promise.allSettled([
@@ -123,7 +123,7 @@ function FieldCanvas({ data, t, layer }) {
           const v = sample(grid, d.lats, d.lons, ll.lat, ll.lng);
           if (v === null) continue;
           const col = colorAt(L_.scale, v);
-          const a = col.length === 4 ? 0 : ly === "rain" ? Math.min(0.75, 0.15 + v / 6) : 0.62;
+          const a = col.length === 4 ? 0 : ly === "rain" ? Math.min(0.75, 0.15 + v / 6) : 0.55;
           if (a <= 0) continue;
           ctx.fillStyle = `rgba(${col[0] | 0},${col[1] | 0},${col[2] | 0},${a})`;
           ctx.fillRect(x, y, B, B);
@@ -142,20 +142,20 @@ function FieldCanvas({ data, t, layer }) {
       p.y = Math.random() * partRef.current.height;
       p.age = Math.floor(Math.random() * 80);
     };
-    for (let i = 0; i < 900; i++) { const p = {}; reset(p); parts.push(p); }
+    for (let i = 0; i < 1400; i++) { const p = {}; reset(p); parts.push(p); }
     const step = () => {
       const c = partRef.current;
       const ctx = c.getContext("2d");
       const { data: d, t: ti, layer: ly } = state.current;
       const L_ = LAYERS.find((x) => x.id === ly);
       ctx.globalCompositeOperation = "destination-in";
-      ctx.fillStyle = "rgba(0,0,0,0.9)";
+      ctx.fillStyle = "rgba(0,0,0,0.94)";
       ctx.fillRect(0, 0, c.width, c.height);
       ctx.globalCompositeOperation = "source-over";
       if (d && L_?.particles) {
         const sp = d[ly === "gust" ? "gust" : "wind"][ti];
         const dr = d.dir[ti];
-        ctx.strokeStyle = "rgba(255,255,255,0.75)";
+        ctx.strokeStyle = "rgba(255,255,255,0.85)";
         ctx.lineWidth = 1.1;
         ctx.beginPath();
         for (const p of parts) {
@@ -164,7 +164,7 @@ function FieldCanvas({ data, t, layer }) {
           const a = sample(dr, d.lats, d.lons, ll.lat, ll.lng);
           if (s === null || a === null || p.age++ > 70) { reset(p); continue; }
           const rad = (a * Math.PI) / 180; // direction the wind comes FROM
-          const k = 0.022 * s;
+          const k = 0.25 + 0.03 * s;
           const nx = p.x - Math.sin(rad) * k, ny = p.y + Math.cos(rad) * k;
           ctx.moveTo(p.x, p.y);
           ctx.lineTo(nx, ny);
@@ -185,6 +185,10 @@ function FieldCanvas({ data, t, layer }) {
   }, [map]);
 
   useEffect(() => {
+    if (data) map.fitBounds([[data.lats[N - 1], data.lons[0]], [data.lats[0], data.lons[N - 1]]]);
+  }, [data, map]);
+
+  useEffect(() => {
     redrawRef.current?.();
     const c = partRef.current;
     if (c) c.getContext("2d").clearRect(0, 0, c.width, c.height);
@@ -195,7 +199,7 @@ function FieldCanvas({ data, t, layer }) {
 /* ---------- value pill markers ---------- */
 const pill = (text, title) => L.divIcon({ className: "wx-pill-wrap", html: `<div class="wx-pill"><b>${title}</b><span>${text}</span></div>`, iconSize: [0, 0] });
 
-export default function WeatherField({ regionInfo, assets = [], priorities = [] }) {
+export default function WeatherField({ regionInfo, assets = [] }) {
   const bbox = regionInfo?.bbox;
   const { data, error } = useField(bbox);
   const [layer, setLayer] = useState("wind");
@@ -239,8 +243,8 @@ export default function WeatherField({ regionInfo, assets = [], priorities = [] 
         })}
       </div>
       <div className="wx-map">
-        <MapContainer key={regionInfo?.id} center={regionInfo?.center || [13.05, 80.24]} zoom={(regionInfo?.zoom || 11) - 2} scrollWheelZoom style={{ height: "100%", width: "100%" }}>
-          <TileLayer attribution='&copy; OpenStreetMap &copy; CARTO' url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+        <MapContainer key={regionInfo?.id} center={regionInfo?.center || [13.05, 80.24]} zoom={(regionInfo?.zoom || 11) - 2} zoomSnap={0.25} scrollWheelZoom style={{ height: "100%", width: "100%" }}>
+          <TileLayer className="dark-tiles" attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <FieldCanvas data={data} t={t} layer={layer} />
           {assets.map((f) => (
             <Marker key={f.properties.id} position={[f.geometry.coordinates[1], f.geometry.coordinates[0]]} icon={typeIcon(f.properties, "small")}>

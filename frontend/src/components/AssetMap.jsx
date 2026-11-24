@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MapContainer, TileLayer, GeoJSON, CircleMarker, Circle, Marker, Popup, Tooltip, useMap } from "react-leaflet";
 import L from "leaflet";
 import { typeIcon, TYPE_STYLE } from "./markers";
@@ -50,13 +50,39 @@ export default function AssetMap({
   legend = true,
   assetColor, // optional (props) => colour, overrides colour-by (used by animations)
   floodLayers, // optional [{ data, key, opacity }] stacked flood layers (darker = floods in smaller storms)
+  filterable = true, // show the "at-risk only / all" + type filter on the map
 }) {
+  const [showAll, setShowAll] = useState(false);
+  const [onlyType, setOnlyType] = useState("");
+  const colorOf = (p) => (assetColor ? assetColor(p) : RISK_COLORS[band(p[(COLOR_FIELDS[colorBy] || COLOR_FIELDS.risk).field] ?? 0, model)]);
+  const shown = useMemo(() => assets.filter((f) => {
+    const p = f.properties;
+    if (p.id === selectedId) return true;
+    if (onlyType && p.type !== onlyType) return false;
+    if (!filterable || showAll) return true;
+    return colorOf(p) !== RISK_COLORS.low;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [assets, showAll, onlyType, selectedId, filterable, assetColor, colorBy, model]);
+  const types = useMemo(() => [...new Set(assets.map((f) => f.properties.type))], [assets]);
   const sites = safeSites?.features || [];
   const cf = COLOR_FIELDS[colorBy] || COLOR_FIELDS.risk;
 
   return (
     <>
-      <div className="map-container" style={{ height }}>
+      <div className="map-container" style={{ height, position: "relative" }}>
+        {filterable && layers.assets && assets.length > 0 && (
+          <div className="map-filter">
+            <div className="segmented">
+              <button className={!showAll ? "on" : ""} onClick={() => setShowAll(false)}>At risk ({assets.filter((f) => colorOf(f.properties) !== RISK_COLORS.low).length})</button>
+              <button className={showAll ? "on" : ""} onClick={() => setShowAll(true)}>All ({assets.length})</button>
+            </div>
+            <select value={onlyType} onChange={(e) => setOnlyType(e.target.value)} aria-label="Asset type">
+              <option value="">All types</option>
+              {types.map((t) => <option key={t} value={t}>{TYPE_STYLE[t]?.label || t}</option>)}
+            </select>
+            {!showAll && shown.length === 0 && <span className="map-filter-note">No assets at risk in this future</span>}
+          </div>
+        )}
         <MapContainer key={mapKey} center={center} zoom={zoom} scrollWheelZoom style={{ height: "100%", width: "100%" }}>
           <TileLayer className="dark-tiles" attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <FlyTo focus={focus} />
@@ -117,7 +143,7 @@ export default function AssetMap({
             })}
 
           {layers.assets &&
-            assets.map((f) => {
+            shown.map((f) => {
               const [lng, lat] = f.geometry.coordinates;
               const p = f.properties;
               const value = p[cf.field] ?? 0;

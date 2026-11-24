@@ -254,7 +254,7 @@ export default function WeatherField({ regionInfo, assets = [] }) {
         <MapContainer key={regionInfo?.id} center={regionInfo?.center || [13.05, 80.24]} zoom={(regionInfo?.zoom || 11) - 2.5} zoomSnap={0.25} scrollWheelZoom style={{ height: "100%", width: "100%" }}>
           <TileLayer className="dark-tiles" attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <FieldCanvas data={data} t={t} layer={layer} />
-          {assets.map((f) => (
+          {assets.filter((f) => f.properties.risk_level !== "low").map((f) => (
             <Marker key={f.properties.id} position={[f.geometry.coordinates[1], f.geometry.coordinates[0]]} icon={typeIcon(f.properties, "small")}>
               <Tooltip>{f.properties.name}: {valueAt({ lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] })}</Tooltip>
             </Marker>
@@ -273,7 +273,7 @@ export default function WeatherField({ regionInfo, assets = [] }) {
         <input type="range" min={0} max={data ? data.times.length - 1 : 0} value={t} onChange={(e) => { setPlaying(false); setT(Number(e.target.value)); }} aria-label="Forecast hour" />
         <b>{when}</b>
       </div>
-      <p className="chart-source">Live forecast from Open-Meteo (free), a {N}×{N} grid of points, hourly for 48 h. Moving streaks show wind direction and speed. Shapes = our power assets.</p>
+      <p className="chart-source">Live forecast from Open-Meteo (free), a {N}×{N} grid of points, hourly for 48 h. Moving streaks show wind direction and speed. Shapes = our medium- and high-risk power assets.</p>
     </div>
   );
 }

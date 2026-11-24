@@ -16,7 +16,7 @@ export default function FutureMap({ region, regionInfo, scenario, surge, model, 
   const [idx, setIdx] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [mode, setMode] = useState("water");
-  const [layers, setLayers] = useState({ assets: true, flood: true, safe: false, sinking: true });
+  const [layers, setLayers] = useState({ assets: true, flood: true, safe: false, sinking: false });
   const timer = useRef(null);
   const sub = regionInfo?.subsidence;
 

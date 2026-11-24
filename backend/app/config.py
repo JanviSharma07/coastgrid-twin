@@ -36,7 +36,10 @@ REGIONS: dict[str, dict] = {
     "chennai": {
         "id": "chennai",
         "name": "Chennai, Tamil Nadu",
+        "short": "Chennai",
+        "state": "Tamil Nadu",
         "country": "India",
+        "coast": "Bay of Bengal (east coast)",
         "center": [13.05, 80.24],
         "zoom": 11,
         # south, west, north, east
@@ -51,9 +54,9 @@ REGIONS: dict[str, dict] = {
         "grid_step_deg": 0.006,
         # The 30 m DEM is aggregated by this factor for flood modelling (5 x 30 m = ~150 m cells)
         "dem_block": 5,
-        # Land-subsidence hotspots reported for Chennai (Nature Sustainability, 2025):
-        # Adyar flood plains, Valasaravakkam, Kodambakkam, Alandur, Tondiarpet.
-        # Coordinates are approximate locality centres. Rate tapers from the published
+        # Land-subsidence hotspots reported for Chennai (Sadhasivam et al., Nature Sustainability, Oct 2025):
+        # Adyar flood plains, Valasaravakkam, Kodambakkam, Alandur, Tondiarpet, K K Nagar.
+        # Coordinates are approximate locality centres. Rate tapers from the published city
         # peak (31.7 mm/yr) at the centre to 0 at the radius. Replace with NISAR / Sentinel-1
         # InSAR rates when processed.
         "subsidence_peak_mm_yr": 31.7,
@@ -64,8 +67,69 @@ REGIONS: dict[str, dict] = {
             {"name": "Kodambakkam", "lat": 13.052, "lon": 80.225},
             {"name": "Alandur", "lat": 13.000, "lon": 80.205},
             {"name": "Tondiarpet", "lat": 13.128, "lon": 80.288},
+            {"name": "K K Nagar", "lat": 13.040, "lon": 80.199},
         ],
-    }
+        "utilities": "TNPDCL / TANGEDCO (distribution), TANTRANSCO (transmission)",
+        "disaster_authority": "Tamil Nadu State Disaster Management Authority",
+        "surge_reference": "IMD report on Cyclone Vardah (Dec 2016): about 1 m surge on a 0.47 m tide.",
+        "notes": [],
+    },
+    "mumbai": {
+        "id": "mumbai",
+        "name": "Mumbai, Maharashtra",
+        "short": "Mumbai",
+        "state": "Maharashtra",
+        "country": "India",
+        "coast": "Arabian Sea (west coast)",
+        "center": [19.07, 72.88],
+        "zoom": 11,
+        "bbox": [18.89, 72.77, 19.27, 72.99],
+        "sea_bearing_deg": 270,
+        "ocean_point": [19.05, 72.75],
+        "utm_epsg": 32643,
+        "grid_step_deg": 0.006,
+        "dem_block": 5,
+        # The same study reports a Mumbai peak of 26.1 mm/yr but no locality points we can cite,
+        # so no hotspots are modelled until InSAR rates are processed.
+        "subsidence_peak_mm_yr": 26.1,
+        "subsidence_radius_km": 1.5,
+        "subsidence_hotspots": [],
+        "utilities": "BEST, Adani Electricity Mumbai, Tata Power (distribution), MSETCL (transmission)",
+        "disaster_authority": "Maharashtra State Disaster Management Authority / BMC disaster cell",
+        "surge_reference": "Storm levels use the same test values as Chennai; local tide-gauge calibration pending.",
+        "notes": [
+            "Mumbai's tidal range is much larger than Chennai's, so these storm-water levels likely understate risk "
+            "until local tide-gauge data (PSMSL Apollo Bandar) is added during onboarding.",
+            "Land sinking: a city peak of 26.1 mm/yr is published, but no locality-level hotspots are modelled yet.",
+        ],
+    },
+    "kochi": {
+        "id": "kochi",
+        "name": "Kochi, Kerala",
+        "short": "Kochi",
+        "state": "Kerala",
+        "country": "India",
+        "coast": "Arabian Sea (west coast) with backwaters",
+        "center": [9.98, 76.28],
+        "zoom": 12,
+        "bbox": [9.85, 76.18, 10.12, 76.40],
+        "sea_bearing_deg": 270,
+        "ocean_point": [9.97, 76.15],
+        "utm_epsg": 32643,
+        "grid_step_deg": 0.006,
+        "dem_block": 5,
+        "subsidence_peak_mm_yr": 0.0,
+        "subsidence_radius_km": 1.5,
+        "subsidence_hotspots": [],
+        "utilities": "KSEB (Kerala State Electricity Board)",
+        "disaster_authority": "Kerala State Disaster Management Authority",
+        "surge_reference": "Storm levels use the same test values as Chennai; local tide-gauge calibration pending.",
+        "notes": [
+            "Kochi's backwaters are only partly treated as open water by the elevation data, so some backwater "
+            "edges may show as flooded land.",
+            "No published land-sinking rates are modelled for Kochi yet.",
+        ],
+    },
 }
 
 # ---------------------------------------------------------------------------
@@ -85,7 +149,7 @@ FLOOD_YEAR_SEARCH = (2025, 2150)  # flood year is reported as "beyond 2150" if n
 SURGE_LEVELS = [
     {"value": 0.5, "label": "High tide only (0.5 m)"},
     {"value": 1.0, "label": "Moderate storm (1.0 m)"},
-    {"value": 1.5, "label": "Cyclone Vardah-like (1.5 m)"},
+    {"value": 1.5, "label": "Strong cyclone (1.5 m)"},
     {"value": 2.0, "label": "Severe cyclone (2.0 m)"},
 ]
 SURGE_VALUES = [s["value"] for s in SURGE_LEVELS]
@@ -132,14 +196,16 @@ SOURCES = [
      "url": "https://rsmcnewdelhi.imd.gov.in/uploads/report/26/26_af079d_vardah.pdf", "licence": "Public"},
     {"layer": "Sea-level rise projections", "name": "IPCC AR6 sea-level projections (NASA Sea Level Projection Tool)",
      "url": "https://sealevel.nasa.gov/data_tools/17", "licence": "Public"},
-    {"layer": "Land subsidence", "name": "Nature Sustainability (2025) Chennai hotspots; NISAR / Sentinel-1 planned",
-     "url": "https://asf.alaska.edu/notices/nisar-l-band-data-now-publicly-available/", "licence": "Public"},
+    {"layer": "Land subsidence", "name": "Sadhasivam et al., Nature Sustainability (2025); NISAR / Sentinel-1 planned",
+     "url": "https://doi.org/10.1038/s41893-025-01663-0", "licence": "Public"},
     {"layer": "Marine heatwaves", "name": "NOAA Coral Reef Watch Marine Heatwave Watch (5 km)",
      "url": "https://coralreefwatch.noaa.gov/product/marine_heatwave/", "licence": "Public domain"},
     {"layer": "Sea surface temperature", "name": "Open-Meteo Marine API",
      "url": "https://open-meteo.com/en/docs/marine-weather-api", "licence": "CC BY 4.0"},
     {"layer": "Wind, humidity, temperature", "name": "ERA5 reanalysis via Open-Meteo Historical API",
      "url": "https://open-meteo.com/en/docs/historical-weather-api", "licence": "CC BY 4.0"},
+    {"layer": "Neighbourhood names", "name": "OpenStreetMap places (suburb / neighbourhood)",
+     "url": "https://www.openstreetmap.org/copyright", "licence": "ODbL"},
     {"layer": "Coastal vulnerability (reference)", "name": "INCOIS Coastal Vulnerability Index",
      "url": "https://incois.gov.in/documents/ITCOocean/Coastal_Vulnerability_Mapping.pdf", "licence": "Reference"},
 ]

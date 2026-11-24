@@ -111,3 +111,30 @@ def test_other_endpoints(client):
     assert client.get("/api/assets", params={"type": "solar"}).json()["features"]
     assert client.get("/api/risk", params={"year": 2033}).status_code == 422
     assert client.get("/api/assets/nope").status_code == 404
+
+
+def test_area_impact(client):
+    r = client.get("/api/area-impact", params={"scenario": "ssp585", "year": 2100, "surge": 2.0})
+    assert r.status_code == 200
+    d = r.json()
+    assert d["totals"]["places"] > 0 and d["totals"]["hospitals"] > 0
+    lo = client.get("/api/area-impact", params={"scenario": "ssp126", "year": 2030, "surge": 0.5}).json()
+    assert len(d["flooded_places"]) >= len(lo["flooded_places"])
+    assert client.get("/api/area-impact", params={"surge": 0.7}).status_code == 422
+
+
+def test_meta_has_three_cities(client):
+    m = client.get("/api/meta").json()
+    ids = [r["id"] for r in m["regions"]]
+    assert ids == ["chennai", "mumbai", "kochi"]
+    assert m["regions"][0]["built"] is not None and m["regions"][1]["built"] is None
+
+
+def test_west_facing_sea_mask():
+    import numpy as np
+    from shapely.geometry import LineString, MultiLineString
+    from app.risk.geo import sea_mask
+    coast = MultiLineString([LineString([(72.85, 18.8), (72.85, 19.3)]), LineString([(72.95, 18.8), (72.95, 19.3)])])
+    lats = np.array([19.0, 19.1]); lons = np.array([72.80, 72.90, 73.0])
+    m = sea_mask(lats, lons, coast, 270)
+    assert m[:, 0].all() and not m[:, 1].any() and not m[:, 2].any()

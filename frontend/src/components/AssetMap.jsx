@@ -39,6 +39,11 @@ export default function AssetMap({
   center = [13.05, 80.24],
   zoom = 11,
   height = 460,
+  points = [],
+  mapKey,
+  flood = true,
+  legend = true,
+  assetColor, // optional (props) => colour, overrides colour-by (used by animations)
 }) {
   const sites = safeSites?.features || [];
   const cf = COLOR_FIELDS[colorBy] || COLOR_FIELDS.risk;
@@ -46,20 +51,27 @@ export default function AssetMap({
   return (
     <>
       <div className="map-container" style={{ height }}>
-        <MapContainer center={center} zoom={zoom} scrollWheelZoom style={{ height: "100%", width: "100%" }}>
+        <MapContainer key={mapKey} center={center} zoom={zoom} scrollWheelZoom style={{ height: "100%", width: "100%" }}>
           <TileLayer
             attribution="&copy; OpenStreetMap contributors"
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           <FlyTo focus={focus} />
 
-          {layers.flood && floodZones?.features?.length > 0 && (
+          {flood && layers.flood && floodZones?.features?.length > 0 && (
             <GeoJSON
               key={layerKey}
               data={floodZones}
               style={{ color: FLOOD_COLOR, weight: 1, fillColor: FLOOD_COLOR, fillOpacity: 0.35 }}
             />
           )}
+
+          {points.map((pt, i) => (
+            <CircleMarker key={`pt-${i}-${pt.lat}`} center={[pt.lat, pt.lon]} radius={pt.radius || 5}
+              pathOptions={{ color: pt.stroke || "#0b1220", weight: pt.weight || 1, fillColor: pt.color, fillOpacity: 0.9 }}>
+              <Tooltip>{pt.label}</Tooltip>
+            </CircleMarker>
+          ))}
 
           {layers.sinking &&
             hotspots.map((h) => (
@@ -98,7 +110,7 @@ export default function AssetMap({
               const [lng, lat] = f.geometry.coordinates;
               const p = f.properties;
               const value = p[cf.field] ?? 0;
-              const color = RISK_COLORS[band(value, model)];
+              const color = assetColor ? assetColor(p) : RISK_COLORS[band(value, model)];
               const selected = p.id === selectedId;
               return (
                 <CircleMarker
@@ -127,7 +139,7 @@ export default function AssetMap({
         </MapContainer>
       </div>
 
-      <div className="map-legend">
+      {legend && <div className="map-legend">
         {layers.assets && (
           <>
             <span className="legend-title">{cf.label}:</span>
@@ -140,7 +152,7 @@ export default function AssetMap({
         {layers.flood && <span><i className="swatch flood"></i> Flooded land</span>}
         {layers.safe && <span><i className="dot safe"></i> Safe site for solar + battery</span>}
         {layers.sinking && <span><i className="dot sink"></i> Land-sinking hotspot</span>}
-      </div>
+      </div>}
     </>
   );
 }

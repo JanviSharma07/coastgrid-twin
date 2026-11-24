@@ -48,19 +48,17 @@ class CoastDistance:
         return p.distance(self.coast_m) / 1000.0
 
 
-def coast_lon_at(coast: MultiLineString, lat: float, west: float, east: float) -> float | None:
-    """Longitude where the coastline crosses this latitude (eastern-most crossing).
-
-    Used to tell sea from land on an east-facing coast.
-    """
+def coast_lon_at(coast: MultiLineString, lat: float, west: float, east: float, sea_east: bool = True) -> float | None:
+    """Longitude where the coastline crosses this latitude: the crossing nearest the open sea
+    (eastern-most on an east-facing coast, western-most on a west-facing one)."""
     ray = LineString([(west, lat), (east, lat)])
     hit = ray.intersection(coast)
     if hit.is_empty:
         return None
     xs = [g.x for g in getattr(hit, "geoms", [hit]) if g.geom_type == "Point"]
     if not xs:  # line overlap: use bounds
-        return hit.bounds[2]
-    return max(xs)
+        return hit.bounds[2] if sea_east else hit.bounds[0]
+    return max(xs) if sea_east else min(xs)
 
 
 def sea_mask(lats: np.ndarray, lons: np.ndarray, coast: MultiLineString, sea_bearing_deg: float) -> np.ndarray:
@@ -71,7 +69,8 @@ def sea_mask(lats: np.ndarray, lons: np.ndarray, coast: MultiLineString, sea_bea
     """
     ny, nx = len(lats), len(lons)
     west, east = float(lons.min()) - 0.05, float(lons.max()) + 0.05
-    crossing = [coast_lon_at(coast, float(la), west, east) for la in lats]
+    sea_east = 45 <= sea_bearing_deg <= 135
+    crossing = [coast_lon_at(coast, float(la), west, east, sea_east) for la in lats]
     known = [i for i, c in enumerate(crossing) if c is not None]
     mask = np.zeros((ny, nx), dtype=bool)
     if not known:
@@ -80,11 +79,17 @@ def sea_mask(lats: np.ndarray, lons: np.ndarray, coast: MultiLineString, sea_bea
         c = crossing[i]
         if c is None:
             c = crossing[min(known, key=lambda k: abs(k - i))]
-        if 45 <= sea_bearing_deg <= 135:  # sea to the east
+        if sea_east:  # sea to the east
             mask[i] = lons > c
         else:  # sea to the west
             mask[i] = lons < c
     return mask
+
+
+def extend_sea(elev: np.ndarray, sea: np.ndarray) -> np.ndarray:
+    """Add harbours, creeks and estuaries: cells at or below 0 m (water surface in the DEM)
+    that connect to the open sea are water today, not land that floods."""
+    return sea | flooded_cells(elev, sea, 0.001)
 
 
 def flooded_cells(elev: np.ndarray, sea: np.ndarray, water_level: float) -> np.ndarray:

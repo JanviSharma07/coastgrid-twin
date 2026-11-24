@@ -104,15 +104,58 @@ def health():
                 "database_url_set": bool(os.environ.get("DATABASE_URL")), "error": _clean(str(e))}
 
 
+REGION_FIELDS = ("id", "name", "short", "state", "country", "coast", "center", "zoom", "bbox", "ocean_point",
+                 "utilities", "disaster_authority", "surge_reference", "notes")
+
+
 @router.get("/meta", tags=["meta"])
 def meta():
-    return {"regions": [{**{k: R[k] for k in ("id", "name", "country", "center", "zoom", "bbox")},
+    built: dict[str, dict | None] = {r: None for r in REGIONS}
+    try:
+        with SessionLocal() as db:
+            for r in REGIONS:
+                b = region_blob(db, r, "build")
+                built[r] = b.data if b else None
+    except Exception:
+        pass
+    return {"regions": [{**{k: R[k] for k in REGION_FIELDS}, "built": built[R["id"]],
                          "subsidence": {"hotspots": R["subsidence_hotspots"], "peak_mm_yr": R["subsidence_peak_mm_yr"],
                                         "radius_km": R["subsidence_radius_km"]}} for R in REGIONS.values()],
             "scenarios": SCENARIOS, "years": YEARS, "surge_levels": SURGE_LEVELS,
             "default": {"region": "chennai", "scenario": "ssp245", "year": 2050, "surge": DEFAULT_SURGE},
             "model": MODEL, "sources": SOURCES,
             "risk_levels": {"high": f">= {MODEL['high']}", "medium": f">= {MODEL['medium']}", "low": f"< {MODEL['medium']}"}}
+
+
+@router.get("/area-impact", tags=["hazards"])
+def area_impact(region: str = "chennai", scenario: Scenario = "ssp245", year: int = 2050, surge: float = DEFAULT_SURGE,
+                db: Session = Depends(get_db)):
+    """Which neighbourhoods and hospitals sit in flooded land, and which hospitals depend on
+    high-risk substations (within the hospital radius)."""
+    check_region(region), check_year(year), check_surge(surge)
+    blob = region_blob(db, region, "exposure")
+    if not blob:
+        raise HTTPException(503, "Area data not built yet. Re-run the pipeline for this region.")
+    d = blob.data
+    hit = d["flooded"].get(f"{scenario}|{year}|{float(surge)}", {"hospitals": [], "places": []})
+    hospitals, places = d["hospitals"], d["places"]
+    flooded_h = [hospitals[i] for i in hit["hospitals"]]
+    flooded_p = [places[i] for i in hit["places"]]
+
+    rows = db.execute(select(Asset, RiskResult).join(RiskResult, RiskResult.asset_id == Asset.id).where(
+        RiskResult.region == region, RiskResult.scenario == scenario, RiskResult.year == year,
+        RiskResult.surge_m == surge, RiskResult.risk_level == "high", Asset.type == "substation")).all()
+    radius = MODEL["hospital_radius_km"]
+    from .risk.geo import haversine_km
+    dependent = []
+    for h in hospitals:
+        near = [a.name for a, _ in rows if haversine_km(h["lat"], h["lon"], a.lat, a.lon) <= radius]
+        if near:
+            dependent.append({**h, "substations": near[:3]})
+    return {"region": region, "scenario": scenario, "year": year, "surge": surge,
+            "totals": {"hospitals": len(hospitals), "places": len(places)},
+            "flooded_places": flooded_p, "flooded_hospitals": flooded_h,
+            "hospitals_near_high_risk_substations": dependent}
 
 
 @router.get("/assets", tags=["assets"])

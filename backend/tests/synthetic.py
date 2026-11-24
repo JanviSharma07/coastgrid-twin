@@ -67,6 +67,13 @@ def patch(sources_module) -> None:
     sources_module.fetch_coastline = coastline
     sources_module.fetch_power_assets = power
     sources_module.fetch_hospitals = hospitals
+
+    def places(bbox, cache):
+        s, w, n, e = bbox
+        return [{"type": "node", "id": 9000 + i, "lat": rnd.uniform(s, n), "lon": rnd.uniform(w, 80.29),
+                 "tags": {"name": f"Area {i}", "place": "suburb"}} for i in range(30)]
+
+    sources_module.fetch_places = places
     def dem(bbox, cache):
         import numpy as np
         from affine import Affine

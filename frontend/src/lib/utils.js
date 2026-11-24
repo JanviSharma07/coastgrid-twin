@@ -9,10 +9,9 @@ export const YEARS = [2030, 2040, 2050, 2060, 2070, 2080, 2090, 2100];
 export const SURGES = [
   { value: 0.5, label: "High tide only (0.5 m)", short: "a normal high tide" },
   { value: 1.0, label: "Moderate storm (1.0 m)", short: "a moderate storm" },
-  { value: 1.5, label: "Cyclone Vardah-like (1.5 m)", short: "a Cyclone Vardah-like storm" },
+  { value: 1.5, label: "Strong cyclone (1.5 m)", short: "a strong cyclone" },
   { value: 2.0, label: "Severe cyclone (2.0 m)", short: "a severe cyclone" },
 ];
-export const REGION = "chennai";
 
 export const RISK_COLORS = { high: "#fb7185", medium: "#fbbf24", low: "#34d399" };
 export const SAFE_COLOR = "#2dd4bf";
@@ -112,3 +111,42 @@ export const storage = {
     }
   },
 };
+
+export const ROLES = [
+  { id: "control", name: "Control room", who: "Storm duty officer / disaster cell", pages: ["storm", "area", "future"],
+    question: "A cyclone is coming. What goes under water, who loses power, what do we switch off first?" },
+  { id: "engineer", name: "Substation engineer", who: "Engineer in charge of a site", pages: ["asset", "storm", "future"],
+    question: "Is my substation safe, until when, and what should I do about it?" },
+  { id: "planner", name: "Planning head", who: "Utility planning / energy department", pages: ["plan", "future", "safe", "asset"],
+    question: "Where do we spend first, how much, and in what order?" },
+  { id: "funder", name: "Regulator / funder", who: "Regulator, funding agency, auditor", pages: ["plan", "evidence", "area"],
+    question: "Is the spending justified, and can we trust the numbers?" },
+];
+export const roleOf = (id) => ROLES.find((r) => r.id === id);
+
+export const TOOLTIP_STYLE = { background: "#101e30", border: "1px solid #30445c", borderRadius: 10, color: "#fff" };
+
+// Plan phases: turn each asset's flood year + recommended action into a time slot.
+export const PHASES = [
+  { id: "now", label: "Act now", when: "next 0–5 years", color: "#fb7185",
+    what: "Water reaches the equipment within 5 years: temporary barriers and pumps before the next monsoon, then raise or relocate." },
+  { id: "capital", label: "Capital plan", when: "next 5–25 years", color: "#fbbf24",
+    what: "Floods before 2050 or needs a flood wall: put it in the next capital-investment plan." },
+  { id: "long", label: "Long-term", when: "2050–2100", color: "#38bdf8",
+    what: "Floods later this century: raise it during its next scheduled upgrade, which costs far less than a separate project." },
+  { id: "maintain", label: "Maintenance", when: "every year", color: "#a78bfa",
+    what: "Heat or salt is the main threat: cooling upgrades, polymer insulators and regular washing from the O&M budget." },
+  { id: "monitor", label: "Monitor", when: "review every 5 years", color: "#34d399",
+    what: "Low risk: no spending now; re-check when new data arrives." },
+];
+export function phaseOf(r) {
+  const now = new Date().getFullYear();
+  const a = r.action || "";
+  if (r.risk_level === "low" && !(r.flood_year && r.flood_year <= now + 5)) return "monitor";
+  if (r.flood_year && r.flood_year <= now + 5) return "now";
+  if (a.startsWith("Salt") || a.startsWith("Cooling")) return "maintain";
+  if ((r.flood_year && r.flood_year <= 2050) || a.startsWith("Flood wall") || a.startsWith("Raise")) return "capital";
+  if (r.flood_year && r.flood_year <= 2100) return "long";
+  if (a.startsWith("Plan elevation")) return "long";
+  return "monitor";
+}

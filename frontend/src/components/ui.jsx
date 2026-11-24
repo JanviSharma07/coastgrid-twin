@@ -29,7 +29,7 @@ export function InfoBox({ title = "What this page tells you", children, steps })
 }
 
 // The three "what future are we testing?" controls, with plain-language hints.
-export function Controls({ scenario, setScenario, year, setYear, surge, setSurge, showYear = true, showSurge = true }) {
+export function Controls({ scenario, setScenario, year, setYear, surge, setSurge, showYear = true, showSurge = true, city = "the city" }) {
   return (
     <div className="controls-bar">
       <label className="control">
@@ -61,7 +61,7 @@ export function Controls({ scenario, setScenario, year, setYear, surge, setSurge
         </label>
       )}
       <p className="controls-summary">
-        Showing: <b>{showYear ? year : "2100"}</b>, if {scenarioOf(scenario).plain}
+        Showing <b>{city}</b>{showYear && <> in <b>{year}</b></>}, if {scenarioOf(scenario).plain}
         {showSurge && <>, with <b>{surgeOf(surge).short}</b> hitting the coast</>}.
       </p>
     </div>

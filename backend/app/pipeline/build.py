@@ -19,7 +19,7 @@ from ..db import (Asset, FloodZone, RegionData, RiskResult, SafeSite, SeaLevel, 
 from ..risk import engine as E
 from ..risk.geo import (CoastDistance, aggregate_dem, coast_distance_km_vec, coastline_geometry,
                         flooded_cells, grid_transform, haversine_km, haversine_km_vec, mask_to_geojson,
-                        sample_raster, sea_mask)
+                        extend_sea, sample_raster, sea_mask)
 from ..risk.sealevel import AR6_GLOBAL_SOURCE, SeaLevelCurve, build_table, load_region_csv
 from . import sources as S
 
@@ -96,7 +96,21 @@ def build(region_id: str) -> dict:
     dist = CoastDistance(coast, epsg)
 
     raw_assets = S.fetch_power_assets(bbox, cache)
-    hospitals = np.array([p for p in (element_point(h) for h in S.fetch_hospitals(bbox, cache)) if p] or [[0.0, 0.0]])
+    hosp_list = []
+    for h in S.fetch_hospitals(bbox, cache):
+        pt = element_point(h)
+        if pt:
+            t = h.get("tags", {})
+            hosp_list.append({"name": (t.get("name:en") or t.get("name") or "Unnamed hospital")[:120],
+                              "lat": round(pt[0], 5), "lon": round(pt[1], 5)})
+    hospitals = np.array([[h["lat"], h["lon"]] for h in hosp_list] or [[0.0, 0.0]])
+    places = []
+    for el in S.fetch_places(bbox, cache):
+        t = el.get("tags", {})
+        name = t.get("name:en") or t.get("name")
+        if name and "lat" in el and not any(p_["name"] == name for p_ in places):
+            places.append({"name": name[:120], "lat": round(el["lat"], 5), "lon": round(el["lon"], 5),
+                           "kind": t.get("place")})
     log.info("OSM: %d power features, %d hospitals, %d coastline ways", len(raw_assets), len(hospitals), len(coast_lines))
 
     found = []
@@ -141,6 +155,7 @@ def build(region_id: str) -> dict:
     grid = np.where(np.isfinite(grid), grid, 0.0)
     sea = sea_mask(lats, lons, coast, R["sea_bearing_deg"])
     grid[sea] = np.minimum(grid[sea], 0.0)
+    sea = extend_sea(grid, sea)  # harbours / creeks already under water today
     log.info("Elevation grid %s cells of %.0f m from %s", grid.shape, step * 111_000, dem_source)
 
     # 3. Asset attributes ----------------------------------------------------------
@@ -160,7 +175,7 @@ def build(region_id: str) -> dict:
     olat, olon = R["ocean_point"]
     clat, clon = R["center"]
     sst = S.fetch_marine_sst(olat, olon, cache)
-    mhw = S.fetch_mhw(olat, olon, cache)
+    mhw = S.fetch_mhw(olat, olon, cache, 1 if 45 <= R["sea_bearing_deg"] <= 135 else -1)
     era5 = S.fetch_era5_climate(clat, clon, R["sea_bearing_deg"], cache)
     climate = E.Climate(mhw_days_last_year=(mhw or {}).get("mhw_days_last_year", 0),
                         rh_mean=(era5 or {}).get("rh_mean", 70.0),
@@ -193,12 +208,29 @@ def build(region_id: str) -> dict:
         d = haversine_km_vec(glat, glon, h["lat"], h["lon"])
         rate = np.clip(R["subsidence_peak_mm_yr"] * (1 - d / R["subsidence_radius_km"]), 0, None)
         sub_grid = np.maximum(sub_grid, rate)
+    # Grid cell of each hospital / neighbourhood, to record which ones sit in flooded land
+    inv = ~gt
+
+    def cell(lat, lon):
+        c, r = inv * (lon, lat)  # noqa
+        r, c = int(r), int(c)
+        return (r, c) if 0 <= r < grid.shape[0] and 0 <= c < grid.shape[1] else None
+
+    hosp_cells = [cell(h["lat"], h["lon"]) for h in hosp_list]
+    place_cells = [cell(p_["lat"], p_["lon"]) for p_ in places]
+    places = [p_ for p_, c in zip(places, place_cells) if c is not None and not sea[c]]
+    place_cells = [c for c in place_cells if c is not None and not sea[c]]
+    exposure = {}
     zones = []
     for sc in SCENARIO_IDS:
         for yr in YEARS:
             ground = grid - sub_grid * max(0, yr - E.SUBSIDENCE_START_YEAR) / 1000.0
             for sg in SURGE_VALUES:
                 mask = flooded_cells(ground, sea, curves[sc].at(yr) + sg)
+                exposure[f"{sc}|{yr}|{sg}"] = {
+                    "hospitals": [i for i, c in enumerate(hosp_cells) if c is not None and mask[c]],
+                    "places": [i for i, c in enumerate(place_cells) if mask[c]],
+                }
                 gj, area = mask_to_geojson(mask, gt, epsg, simplify=step / 3)
                 zones.append({"region": region_id, "scenario": sc, "year": yr, "surge_m": sg,
                               "area_km2": area, "geojson": json.dumps(gj)})
@@ -251,9 +283,11 @@ def build(region_id: str) -> dict:
         now = utcnow()
         db.add(RegionData(region=region_id, key="ocean", updated_at=now, data=ocean))
         db.add(RegionData(region=region_id, key="coastline", updated_at=now, data={"lines": coast_lines}))
+        db.add(RegionData(region=region_id, key="exposure", updated_at=now,
+                          data={"hospitals": hosp_list, "places": places, "flooded": exposure}))
         db.add(RegionData(region=region_id, key="build", updated_at=now, data={
             "built_at": now.isoformat(), "assets": len(assets), "osm_features": len(found),
-            "hospitals": int(len(hospitals)), "elevation_source": dem_source,
+            "hospitals": len(hosp_list), "places": len(places), "elevation_source": dem_source,
             "grid_cell_m": round(step * 111_000), "sea_level_source": sl_source,
             "seconds": round(time.time() - t0, 1)}))
         db.commit()

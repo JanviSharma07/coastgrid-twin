@@ -115,6 +115,15 @@ out center tags;"""
     return overpass(q, cache, "osm_hospitals")["elements"]
 
 
+def fetch_places(bbox: list[float], cache: Cache) -> list[dict]:
+    """Named neighbourhoods / suburbs, used to say which areas flood."""
+    s, w, n, e = bbox
+    q = f"""[out:json][timeout:120];
+node["place"~"^(suburb|neighbourhood|quarter|village|town)$"]["name"]({s},{w},{n},{e});
+out body;"""
+    return overpass(q, cache, "osm_places")["elements"]
+
+
 def fetch_coastline(bbox: list[float], cache: Cache) -> list[list[list[float]]]:
     s, w, n, e = bbox
     pad = 0.1
@@ -175,7 +184,7 @@ def fetch_marine_sst(lat: float, lon: float, cache: Cache) -> dict | None:
         return None
 
 
-def fetch_mhw(lat: float, lon: float, cache: Cache) -> dict | None:
+def fetch_mhw(lat: float, lon: float, cache: Cache, seaward: int = 1) -> dict | None:
     """NOAA Coral Reef Watch marine heatwave category over the last 365 days (nearest ocean pixel)."""
     key = f"crw_mhw_{date.today().isoformat()}"
     if (hit := cache.get(key)) is not None:
@@ -183,7 +192,7 @@ def fetch_mhw(lat: float, lon: float, cache: Cache) -> dict | None:
     start = (date.today() - timedelta(days=365)).isoformat()
     try:
         with _client() as c:
-            for dlon in (0.0, 0.05, 0.1, 0.2):
+            for dlon in (0.0, 0.05 * seaward, 0.1 * seaward, 0.2 * seaward):
                 q = (f"heatwave_category[({start}T12:00:00Z):1:(last)]"
                      f"[({lat:.3f}):1:({lat:.3f})][({lon + dlon:.3f}):1:({lon + dlon:.3f})]")
                 d = _get_json(c, f"{CRW_MHW_URL}?{q}")

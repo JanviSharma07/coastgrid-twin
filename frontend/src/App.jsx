@@ -4,41 +4,39 @@ import Sidebar, { PAGES } from "./components/Sidebar";
 import Header from "./components/Header";
 import { Controls } from "./components/ui";
 
-import StartHere from "./pages/StartHere";
-import Overview from "./pages/Overview";
-import RiskMapPage from "./pages/RiskMapPage";
-import AssetDetails from "./pages/AssetDetails";
-import Priorities from "./pages/Priorities";
-import WhatIf from "./pages/WhatIf";
+import Home from "./pages/Home";
+import StormWatch from "./pages/StormWatch";
+import FutureMap from "./pages/FutureMap";
+import AreaPeople from "./pages/AreaPeople";
+import MySubstation from "./pages/MySubstation";
+import InvestmentPlan from "./pages/InvestmentPlan";
 import SafeSites from "./pages/SafeSites";
-import Weather from "./pages/Weather";
-import Reports from "./pages/Reports";
-import HowItWorks from "./pages/HowItWorks";
+import Evidence from "./pages/Evidence";
 
-import { getMeta, getHealth, getRisk, getPriorities, getSafeSites, getFloodZones, getSeaLevel, getOcean } from "./services/api";
-import { REGION } from "./lib/utils";
+import { getMeta, getHealth, getRisk, getPriorities, getSafeSites, getFloodZones, getSeaLevel, getOcean, getAreaImpact } from "./services/api";
+import { storage } from "./lib/utils";
 
 import "./index.css";
 import "./pages.css";
 
-// Which pages use the scenario / year / storm controls
+// Which shared controls each page shows (Storm Watch and Mission have their own)
 const CONTROLS = {
-  overview: { year: true, surge: true },
-  map: { year: true, surge: true },
+  future: { year: false, surge: true },
+  area: { year: true, surge: true },
   asset: { year: true, surge: true },
-  priorities: { year: true, surge: true },
-  whatif: { year: true, surge: true },
+  plan: { year: true, surge: true },
   safe: { year: false, surge: false },
-  reports: { year: true, surge: true },
 };
 
 const pageFromHash = () => {
   const id = window.location.hash.replace(/^#\/?/, "").split("?")[0];
-  return PAGES.some((p) => p.id === id) ? id : "start";
+  return PAGES.some((p) => p.id === id) ? id : "home";
 };
 
 function App() {
   const [active, setActive] = useState(pageFromHash);
+  const [region, setRegionState] = useState(() => storage.get("cg-region", "chennai"));
+  const [role, setRoleState] = useState(() => storage.get("cg-role", ""));
   const [scenario, setScenario] = useState("ssp245");
   const [year, setYear] = useState(2050);
   const [surge, setSurge] = useState(1.5);
@@ -52,10 +50,10 @@ function App() {
   const [floodZones, setFloodZones] = useState(null);
   const [seaLevel, setSeaLevel] = useState(null);
   const [ocean, setOcean] = useState(null);
+  const [areaImpact, setAreaImpact] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Hash navigation so the browser back button and shared links work
   useEffect(() => {
     const onHash = () => setActive(pageFromHash());
     window.addEventListener("hashchange", onHash);
@@ -69,108 +67,128 @@ function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  // Data that does not change with the controls
+  const setRegion = (r) => {
+    setRegionState(r);
+    storage.set("cg-region", r);
+    setSelectedId("");
+  };
+  const setRole = (r) => {
+    setRoleState(r);
+    storage.set("cg-role", r);
+  };
+  const chooseRole = (r, page) => {
+    setRole(r);
+    go(page);
+  };
+
   useEffect(() => {
-    getHealth()
-      .then((r) => setStatus(r.data?.status === "ok" ? "ok" : "down"))
-      .catch(() => setStatus("down"));
+    getHealth().then((r) => setStatus(r.data?.status === "ok" ? "ok" : "down")).catch(() => setStatus("down"));
     getMeta().then((r) => setMeta(r.data)).catch(() => {});
-    getSeaLevel({ region: REGION }).then((r) => setSeaLevel(r.data)).catch(() => {});
-    getOcean({ region: REGION }).then((r) => setOcean(r.data)).catch(() => {});
   }, []);
 
+  // Per-city data
   useEffect(() => {
-    getSafeSites({ region: REGION, scenario }).then((r) => setSafeSites(r.data)).catch(() => {});
-  }, [scenario]);
+    setSeaLevel(null);
+    setOcean(null);
+    getSeaLevel({ region }).then((r) => setSeaLevel(r.data)).catch(() => {});
+    getOcean({ region }).then((r) => setOcean(r.data)).catch(() => {});
+  }, [region]);
 
-  // Data that depends on scenario / year / storm
+  useEffect(() => {
+    setSafeSites(null);
+    getSafeSites({ region, scenario }).then((r) => setSafeSites(r.data)).catch(() => {});
+  }, [region, scenario]);
+
+  // Data for the chosen future
   useEffect(() => {
     let cancelled = false;
     async function load() {
       setLoading(true);
       setError("");
-      const params = { region: REGION, scenario, year, surge };
-      const [r, p, f] = await Promise.allSettled([
-        getRisk(params),
-        getPriorities({ ...params, limit: 200 }),
-        getFloodZones(params),
+      const params = { region, scenario, year, surge };
+      const [r, p, f, a] = await Promise.allSettled([
+        getRisk(params), getPriorities({ ...params, limit: 200 }), getFloodZones(params), getAreaImpact(params),
       ]);
       if (cancelled) return;
-      if (r.status === "fulfilled") {
-        setRisk(r.value.data);
-        setStatus("ok");
-      } else {
+      setRisk(r.status === "fulfilled" ? r.value.data : null);
+      setPriorities(p.status === "fulfilled" ? p.value.data.items || [] : []);
+      setFloodZones(f.status === "fulfilled" ? f.value.data : null);
+      setAreaImpact(a.status === "fulfilled" ? a.value.data : null);
+      if (r.status === "fulfilled") setStatus("ok");
+      else if (r.reason?.response?.status !== 503)
         setError("Could not reach the data server. It may be waking up; please refresh in a few seconds.");
-      }
-      if (p.status === "fulfilled") setPriorities(p.value.data.items || []);
-      if (f.status === "fulfilled") setFloodZones(f.value.data);
       setLoading(false);
     }
     load();
     return () => {
       cancelled = true;
     };
-  }, [scenario, year, surge]);
+  }, [region, scenario, year, surge]);
 
-  // Default the selected asset to the top priority
   useEffect(() => {
-    if (!selectedId && priorities.length) setSelectedId(priorities[0].id);
+    if (priorities.length && !priorities.some((p) => p.id === selectedId)) setSelectedId(priorities[0].id);
   }, [priorities, selectedId]);
 
-  const region = meta?.regions?.[0];
-  const model = useMemo(
-    () => ({ ...(meta?.model || {}), high: meta?.model?.high ?? 0.55, medium: meta?.model?.medium ?? 0.3 }),
-    [meta]
-  );
+  const regions = useMemo(() => meta?.regions || [], [meta]);
+  const regionInfo = regions.find((r) => r.id === region);
+  const built = regionInfo ? regionInfo.built !== null : true;
+  const model = useMemo(() => ({ ...(meta?.model || {}), high: meta?.model?.high ?? 0.55, medium: meta?.model?.medium ?? 0.3 }), [meta]);
   const page = PAGES.find((p) => p.id === active) || PAGES[0];
   const controls = CONTROLS[active];
 
   const shared = {
-    meta, region, model, risk, assets: risk?.features || [], summary: risk?.summary || {}, priorities,
-    safeSites, floodZones, seaLevel, ocean, scenario, year, surge, selectedId, setSelectedId, go, loading,
+    meta, regions, region, regionInfo, built, model, risk, assets: risk?.features || [], summary: risk?.summary || {},
+    priorities, safeSites, floodZones, seaLevel, ocean, areaImpact, scenario, year, surge, setScenario, setYear, setSurge,
+    selectedId, setSelectedId, go, loading, role, chooseRole, setRegion,
   };
 
   const pages = {
-    start: <StartHere {...shared} />,
-    overview: <Overview {...shared} />,
-    map: <RiskMapPage {...shared} />,
-    asset: <AssetDetails {...shared} />,
-    priorities: <Priorities {...shared} />,
-    whatif: <WhatIf {...shared} />,
+    home: <Home {...shared} />,
+    storm: <StormWatch {...shared} />,
+    future: <FutureMap {...shared} />,
+    area: <AreaPeople {...shared} />,
+    asset: <MySubstation {...shared} />,
+    plan: <InvestmentPlan {...shared} />,
     safe: <SafeSites {...shared} />,
-    weather: <Weather {...shared} />,
-    reports: <Reports {...shared} />,
-    method: <HowItWorks {...shared} />,
+    evidence: <Evidence {...shared} />,
   };
 
   return (
     <div className="app-layout">
-      <Sidebar active={active} go={go} />
+      <Sidebar active={active} go={go} role={role} />
 
       <main className="main-content">
-        <Header page={page} status={status} go={go} />
+        <Header page={page} status={status} regions={regions} region={region} setRegion={setRegion} role={role} setRole={setRole} />
 
         <div className="dashboard-content">
+          {!built && (
+            <div className="onboarding-banner">
+              <b>{regionInfo?.name} is being onboarded.</b> Its data has not been built yet, so the screens are empty.
+              The same pipeline that built Chennai runs for it with one command (see Evidence & Data → Add a city).
+            </div>
+          )}
+          {regionInfo?.notes?.length > 0 && built && (
+            <div className="note-banner">
+              <b>Calibration notes for {regionInfo.short}:</b> {regionInfo.notes.join(" ")}
+            </div>
+          )}
+
           {controls && (
-            <Controls
-              scenario={scenario} setScenario={setScenario}
-              year={year} setYear={setYear}
-              surge={surge} setSurge={setSurge}
-              showYear={controls.year} showSurge={controls.surge}
-            />
+            <Controls scenario={scenario} setScenario={setScenario} year={year} setYear={setYear}
+              surge={surge} setSurge={setSurge} showYear={controls.year} showSurge={controls.surge} city={regionInfo?.short} />
           )}
 
           {error && <div className="error-banner">{error}</div>}
-          {loading && controls && <div className="loading-message">Loading data for this future…</div>}
+          {loading && controls && built && <div className="loading-message">Loading data for this future…</div>}
 
           {pages[active]}
 
           <footer className="dashboard-footer">
             <span>COASTGRID TWIN</span>
             <span>
-              {region?.name || "Chennai, Tamil Nadu"} · Data: IPCC AR6 · Copernicus DEM · NOAA Coral Reef Watch · ERA5 ·
+              {regionInfo?.name || "Chennai, Tamil Nadu"} · Data: IPCC AR6 · Copernicus DEM · NOAA Coral Reef Watch · ERA5 ·
               Open-Meteo · OpenStreetMap ·{" "}
-              <a href="#/method" onClick={(e) => { e.preventDefault(); go("method"); }}>sources & limits</a>
+              <a href="#/evidence" onClick={(e) => { e.preventDefault(); go("evidence"); }}>sources & limits</a>
             </span>
           </footer>
         </div>

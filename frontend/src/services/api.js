@@ -21,6 +21,7 @@ export const getFloodZones = (params) => API.get("/api/flood-zones", { params })
 export const getAssetDetail = (id, params) =>
   API.get(`/api/assets/${id}`, { params });
 
+export const getAreaImpact = (params) => API.get("/api/area-impact", { params });
 export const simulateRisk = (data) => API.post("/api/simulate", data);
 
 export default API;

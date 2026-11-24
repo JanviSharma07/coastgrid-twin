@@ -67,3 +67,20 @@ Response: `before` and `after` (same fields as risk), `years_gained` (number, `"
 
 `404` unknown asset/region, `422` invalid parameter (for example a year not in the list),
 `503` region data not built yet. Body: `{ "detail": "message" }`.
+
+## GET /api/area-impact
+
+Neighbourhoods and hospitals affected for one future.
+
+Params: `region` (chennai | mumbai | kochi), `scenario`, `year`, `surge`.
+
+Returns `totals` {hospitals, places}, `flooded_places` [{name, lat, lon, kind}],
+`flooded_hospitals` [{name, lat, lon}], and `hospitals_near_high_risk_substations`
+[{name, lat, lon, substations[]}] (within 3 km of a substation at high risk).
+A point counts as flooded when its ~150 m grid cell is under sea water.
+Returns 503 until the pipeline has been run for the region with this version.
+
+## Regions
+
+`/api/meta` lists Chennai, Mumbai and Kochi with `built` (null until the pipeline has run),
+utilities, disaster authority and calibration `notes`.

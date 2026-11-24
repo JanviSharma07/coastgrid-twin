@@ -4,13 +4,13 @@ import AssetMap from "../components/AssetMap";
 import { InfoBox, Panel } from "../components/ui";
 import { downloadText, toCSV, scenarioOf } from "../lib/utils";
 
-export default function SafeSites({ safeSites, assets, model, region, scenario }) {
+export default function SafeSites({ safeSites, assets, model, region, regionInfo, scenario }) {
   const sites = safeSites?.features || [];
   const [focus, setFocus] = useState(null);
 
   const csv = () =>
     downloadText(
-      `coastgrid_safe_sites_${scenario}.csv`,
+      `coastgrid_safe_sites_${region}_${scenario}.csv`,
       toCSV(sites, [
         { label: "Rank", get: (f) => f.properties.rank },
         { label: "Latitude", get: (f) => f.geometry.coordinates[1] },
@@ -27,7 +27,8 @@ export default function SafeSites({ safeSites, assets, model, region, scenario }
     <div className="page">
       <InfoBox steps={["Pick an emissions path above (the 2100 worst case is used).", "Click a row to zoom the map to that site.", "Download the list for a site survey."]}>
         Where should new solar panels and batteries go so they are not the next thing to flood? These are spots of high
-        ground close to an existing substation (cheap to connect) that stay dry even in the worst case.
+        ground close to an existing substation (short, cheap connection) that stay dry even in the worst case. Adding
+        local generation here also keeps power flowing when a coastal substation has to be switched off in a storm.
       </InfoBox>
 
       <Panel title="How a site qualifies" subtitle={`Using ${scenarioOf(scenario).label}, upper (83rd percentile) sea level in 2100 + a 2 m severe-cyclone surge`}>
@@ -41,9 +42,9 @@ export default function SafeSites({ safeSites, assets, model, region, scenario }
 
       <div className="two-col wide-left">
         <Panel title="Map" subtitle="Dashed teal circles = recommended sites">
-          <AssetMap assets={assets} safeSites={safeSites} model={model} focus={focus}
+          <AssetMap mapKey={`safe-${region}`} assets={assets} safeSites={safeSites} model={model} focus={focus} zoom={regionInfo?.zoom}
             layers={{ assets: true, flood: false, safe: true, sinking: false }}
-            center={region?.center} height={480} />
+            center={regionInfo?.center} height={480} />
         </Panel>
         <Panel title={`Top ${sites.length} sites`} right={<button className="link-button" onClick={csv} disabled={!sites.length}><Download size={15} /> CSV</button>}>
           <div className="table-wrap tall">

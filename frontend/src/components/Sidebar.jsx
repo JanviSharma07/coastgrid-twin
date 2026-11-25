@@ -54,6 +54,10 @@ export default function Sidebar({ active, go, role }) {
       <nav>{PAGES.filter((p) => !mine.includes(p.id)).map(Item)}</nav>
 
       <div className="sidebar-bottom">
+        <a className="sidebar-qr" href="/qr.png" target="_blank" rel="noreferrer" title="Scan to open this site on a phone">
+          <img src="/qr.png" alt="QR code for coastgrid-twin.vercel.app" width="64" height="64" />
+          <span><b>Scan to open</b>on your phone</span>
+        </a>
         <div className="team-card">
           <div className="team-avatar">TV</div>
           <div>

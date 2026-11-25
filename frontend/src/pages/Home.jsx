@@ -234,10 +234,14 @@ export default function Home({ regions, region, regionInfo, priorities, assets, 
 
       <section className="closing">
         <CheckCircle2 size={22} />
-        <p>
+        <p className="closing-text">
           <b>The ask:</b> pilot with one state utility's real asset register for one city. That means one monsoon season of
           Storm Watch, and the twin's ranking becomes part of the next capital-investment plan.
         </p>
+        <figure className="qr-card">
+          <img src="/qr.png" alt="QR code linking to coastgrid-twin.vercel.app" width="120" height="120" />
+          <figcaption><b>Open on your phone</b><span>coastgrid-twin.vercel.app</span></figcaption>
+        </figure>
       </section>
     </div>
   );

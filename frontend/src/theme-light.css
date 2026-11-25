@@ -1,0 +1,208 @@
+/* =========================================
+   LIGHT MODE: switched on with the sun/moon button in the header.
+   Dark stays the default; every rule here is scoped to [data-theme="light"].
+========================================= */
+:root[data-theme="light"] {
+  color-scheme: light;
+  color: #0f2a33;
+  background: #eef4f6;
+  --bg-main: #eef4f6;
+  --bg-sidebar: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-light: #f4f8f9;
+  --primary: #0e9f8e;
+  --primary-light: #0b8577;
+  --secondary: #0284c7;
+  --text-main: #0f2a33;
+  --text-muted: #5b7680;
+  --border: rgba(15, 70, 80, 0.14);
+  --glow: rgba(14, 159, 142, 0.12);
+}
+:root[data-theme="light"] body { background: #eef4f6; color: #0f2a33; }
+:root[data-theme="light"] .dark-tiles { filter: none; }
+
+/* Surfaces */
+:root[data-theme="light"] .sidebar { background: #ffffff; border-right: 1px solid var(--border); }
+:root[data-theme="light"] .header { background: rgba(255, 255, 255, 0.94); }
+:root[data-theme="light"] .panel,
+:root[data-theme="light"] .stat-card,
+:root[data-theme="light"] .asset-head,
+:root[data-theme="light"] .hero-panel { background: #ffffff; box-shadow: 0 2px 10px rgba(15, 60, 70, 0.06); }
+:root[data-theme="light"] .hero-panel { background: linear-gradient(145deg, #e6f7f5, #ffffff); }
+:root[data-theme="light"] .controls-bar,
+:root[data-theme="light"] .timelapse-bar,
+:root[data-theme="light"] .wx-time { background: #ffffff; box-shadow: 0 2px 10px rgba(15, 60, 70, 0.06); }
+:root[data-theme="light"] .mini-card,
+:root[data-theme="light"] .step-card,
+:root[data-theme="light"] .checklist,
+:root[data-theme="light"] .priority-item,
+:root[data-theme="light"] .timeline-step,
+:root[data-theme="light"] .phase-strip > div,
+:root[data-theme="light"] .net-card,
+:root[data-theme="light"] .replay-counts > div,
+:root[data-theme="light"] .forecast-day,
+:root[data-theme="light"] .phase-col,
+:root[data-theme="light"] .chart-card,
+:root[data-theme="light"] .playbook,
+:root[data-theme="light"] .plants-counts,
+:root[data-theme="light"] .plants-top { background: #f6fafb; }
+:root[data-theme="light"] .big-number,
+:root[data-theme="light"] .phase-col button,
+:root[data-theme="light"] .action-sites { background: #eef4f6; }
+:root[data-theme="light"] .action-card { background: linear-gradient(160deg, color-mix(in srgb, var(--c) 12%, #ffffff), #ffffff 60%); }
+:root[data-theme="light"] .side-view svg { background: linear-gradient(#e6f2f5, #d5e7ec); }
+:root[data-theme="light"] .score-track,
+:root[data-theme="light"] .progress { background: #e2ecef; }
+:root[data-theme="light"] .timeline-dot { background: #ffffff; }
+
+/* Inputs, selects, buttons */
+:root[data-theme="light"] .control select,
+:root[data-theme="light"] .simulator select,
+:root[data-theme="light"] .table-tools input,
+:root[data-theme="light"] .money-input,
+:root[data-theme="light"] .cost-row input,
+:root[data-theme="light"] .wide-select,
+:root[data-theme="light"] .sort-select select,
+:root[data-theme="light"] .search-box,
+:root[data-theme="light"] .status-select,
+:root[data-theme="light"] .header-select,
+:root[data-theme="light"] .status-pill,
+:root[data-theme="light"] .date-button,
+:root[data-theme="light"] .icon-button { background: #ffffff; color: #0f2a33; }
+:root[data-theme="light"] .header-select select { color: #0f2a33; }
+:root[data-theme="light"] select option { background: #ffffff; color: #0f2a33; }
+:root[data-theme="light"] .segmented,
+:root[data-theme="light"] .replay-steps button,
+:root[data-theme="light"] .wx-tabs button { background: #eef4f6; color: #3b5660; }
+:root[data-theme="light"] .segmented button { color: #3b5660; }
+:root[data-theme="light"] .segmented button.on,
+:root[data-theme="light"] .wx-tabs button.on { color: #ffffff; background: #0e9f8e; }
+:root[data-theme="light"] .replay-steps button.on { color: #ffffff; background: #0284c7; }
+:root[data-theme="light"] .replay-steps button.past { color: #0369a1; }
+:root[data-theme="light"] .primary-button { color: #ffffff; background: linear-gradient(100deg, #0b8577, #0e9f8e); }
+:root[data-theme="light"] .link-button { color: #0b8577; background: rgba(14, 159, 142, 0.08); }
+:root[data-theme="light"] .nav-item { color: #3b5660; }
+:root[data-theme="light"] .nav-item:hover { color: #0f2a33; background: #eef4f6; }
+:root[data-theme="light"] .nav-item.active { color: #0b8577; }
+:root[data-theme="light"] .map-filter .segmented,
+:root[data-theme="light"] .map-filter select,
+:root[data-theme="light"] .map-filter-note { background: rgba(255, 255, 255, 0.95); color: #0f2a33; }
+
+/* Text colours (dark text on light) */
+:root[data-theme="light"] .brand h2,
+:root[data-theme="light"] .header h1,
+:root[data-theme="light"] .panel-heading h2,
+:root[data-theme="light"] .panel-heading h3,
+:root[data-theme="light"] .priority-item h3,
+:root[data-theme="light"] .mini-card h3,
+:root[data-theme="light"] .step-card h3,
+:root[data-theme="light"] .checklist h3,
+:root[data-theme="light"] .hero-panel h2,
+:root[data-theme="light"] .side-title,
+:root[data-theme="light"] .forecast-day h4,
+:root[data-theme="light"] .glossary dt,
+:root[data-theme="light"] .timeline-step b,
+:root[data-theme="light"] .plants-row h4,
+:root[data-theme="light"] .net-card h4,
+:root[data-theme="light"] .net-core b,
+:root[data-theme="light"] .year-big,
+:root[data-theme="light"] .section-title,
+:root[data-theme="light"] .action-card h3,
+:root[data-theme="light"] .chart-card h4,
+:root[data-theme="light"] .team-card strong,
+:root[data-theme="light"] .asset-head h2,
+:root[data-theme="light"] .plain-summary b,
+:root[data-theme="light"] .shutdown-list button,
+:root[data-theme="light"] .text-link,
+:root[data-theme="light"] .map-legend .legend-title { color: #0f2a33; }
+:root[data-theme="light"] .info-body,
+:root[data-theme="light"] .controls-summary,
+:root[data-theme="light"] .plain-summary,
+:root[data-theme="light"] .hero-sub,
+:root[data-theme="light"] .mini-card p,
+:root[data-theme="light"] .step-card p,
+:root[data-theme="light"] .check-list,
+:root[data-theme="light"] .next-list,
+:root[data-theme="light"] .explain-list,
+:root[data-theme="light"] .next-list span,
+:root[data-theme="light"] .data-table td,
+:root[data-theme="light"] .forecast-day p,
+:root[data-theme="light"] .check-item,
+:root[data-theme="light"] .source-list,
+:root[data-theme="light"] .glossary dd,
+:root[data-theme="light"] .timeline-step p,
+:root[data-theme="light"] .plants-counts span,
+:root[data-theme="light"] .plants-top button,
+:root[data-theme="light"] .net-card li,
+:root[data-theme="light"] .net-core small,
+:root[data-theme="light"] .plain-list,
+:root[data-theme="light"] .phase-col p,
+:root[data-theme="light"] .phase-col button,
+:root[data-theme="light"] .funding-list span,
+:root[data-theme="light"] .section-sub,
+:root[data-theme="light"] .action-face p,
+:root[data-theme="light"] .action-do ol,
+:root[data-theme="light"] .action-face small,
+:root[data-theme="light"] .action-sites,
+:root[data-theme="light"] .empty-city p,
+:root[data-theme="light"] .simulation-result p,
+:root[data-theme="light"] .simulator label,
+:root[data-theme="light"] .closing p { color: #2d4952; }
+:root[data-theme="light"] .info-toggle,
+:root[data-theme="light"] .info-steps { color: #075985; }
+:root[data-theme="light"] .data-table th { background: #e6f2f4; color: #3b5660; }
+:root[data-theme="light"] .chart-source,
+:root[data-theme="light"] .stat-card p,
+:root[data-theme="light"] .chart-legend { color: #5b7680; }
+
+/* Coloured text needs darker shades on white */
+:root[data-theme="light"] .c-high,
+:root[data-theme="light"] .data-table td.neg,
+:root[data-theme="light"] .data-table.compare td.no,
+:root[data-theme="light"] .tl-stat small,
+:root[data-theme="light"] .side-view figcaption.bad { color: #e11d48; }
+:root[data-theme="light"] .c-med,
+:root[data-theme="light"] .data-table.compare td.mid,
+:root[data-theme="light"] .hero-panel em,
+:root[data-theme="light"] .action-box span { color: #b45309; }
+:root[data-theme="light"] .c-blue { color: #0284c7; }
+:root[data-theme="light"] .c-pink { color: #db2777; }
+:root[data-theme="light"] .data-table.compare td.yes,
+:root[data-theme="light"] .side-view figcaption.good { color: #059669; }
+:root[data-theme="light"] .risk-badge.high, :root[data-theme="light"] .count-row .high { color: #be123c; }
+:root[data-theme="light"] .risk-badge.medium, :root[data-theme="light"] .count-row .medium { color: #b45309; }
+:root[data-theme="light"] .risk-badge.low, :root[data-theme="light"] .count-row .low { color: #047857; }
+:root[data-theme="light"] .tag.live { color: #047857; }
+:root[data-theme="light"] .tag.planned { color: #b45309; }
+:root[data-theme="light"] .action-face b { color: #be123c; }
+:root[data-theme="light"] .action-do b { color: #047857; }
+:root[data-theme="light"] .action-card footer { color: #92400e; }
+:root[data-theme="light"] .action-headline { filter: brightness(0.75); }
+:root[data-theme="light"] .action-box b { color: #78350f; }
+:root[data-theme="light"] .formula-note { color: #5b21b6; }
+:root[data-theme="light"] .next-list b { color: #b45309; }
+:root[data-theme="light"] .alert-banner { color: #9f1239; }
+:root[data-theme="light"] .ok-banner { color: #065f46; }
+:root[data-theme="light"] .onboarding-banner, :root[data-theme="light"] .onboarding-banner.big p { color: #075985; }
+:root[data-theme="light"] .note-banner { color: #78350f; }
+:root[data-theme="light"] .error-banner { color: #be123c; }
+:root[data-theme="light"] .chip-list span { color: #075985; }
+:root[data-theme="light"] .newly small { color: #be123c; }
+:root[data-theme="light"] .newly button { color: #881337; }
+:root[data-theme="light"] .threat-chips span { color: #0f2a33; }
+:root[data-theme="light"] .status-select.s3 { color: #047857; }
+:root[data-theme="light"] .priority-action { color: #0b8577 !important; }
+
+/* Map popups and charts */
+:root[data-theme="light"] .leaflet-popup-content-wrapper,
+:root[data-theme="light"] .leaflet-popup-tip { background: #ffffff; color: #0f2a33; }
+:root[data-theme="light"] .leaflet-popup-content { color: #0f2a33; }
+:root[data-theme="light"] .leaflet-container { background: #dfe9ec; }
+:root[data-theme="light"] .recharts-cartesian-grid line { stroke: #d6e2e6; }
+:root[data-theme="light"] .recharts-cartesian-axis-tick-value { fill: #5b7680; }
+:root[data-theme="light"] ::-webkit-scrollbar-track { background: #e6eef1; }
+:root[data-theme="light"] ::-webkit-scrollbar-thumb { background: #b6cbd1; }
+
+/* Theme button */
+.theme-toggle { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); background: #0f2630; color: var(--primary-light); font-size: 12.5px; font-weight: 700; cursor: pointer; }
+:root[data-theme="light"] .theme-toggle { background: #ffffff; color: #0b8577; }

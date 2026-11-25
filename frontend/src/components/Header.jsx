@@ -1,7 +1,14 @@
-import { MapPin, UserRound } from "lucide-react";
+import { useEffect, useState } from "react";
+import { MapPin, UserRound, Sun, Moon } from "lucide-react";
+import { storage } from "../lib/utils";
 import { ROLES } from "../lib/utils";
 
 export default function Header({ page, status, regions, region, setRegion, role, setRole }) {
+  const [theme, setTheme] = useState(() => storage.get("cg-theme", "dark"));
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    storage.set("cg-theme", theme);
+  }, [theme]);
   const statusText = { ok: "Live data", waking: "Connecting…", down: "Server unreachable" }[status];
   return (
     <header className="header">
@@ -27,6 +34,10 @@ export default function Header({ page, status, regions, region, setRegion, role,
             {ROLES.map((r) => <option key={r.id} value={r.id}>Viewing as: {r.name}</option>)}
           </select>
         </label>
+        <button className="theme-toggle" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} title="Light / dark mode">
+          {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />} {theme === "dark" ? "Light" : "Dark"}
+        </button>
         <span className={`status-pill ${status}`} title="Connection to the CoastGrid Twin data server">
           <i></i> {statusText}
         </span>

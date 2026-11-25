@@ -18,6 +18,7 @@ import { storage } from "./lib/utils";
 
 import "./index.css";
 import "./pages.css";
+import "./theme-light.css";
 
 // Which shared controls each page shows (Storm Watch and Mission have their own)
 const CONTROLS = {
